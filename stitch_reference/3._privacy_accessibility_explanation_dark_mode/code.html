@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="h-full dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;min-height:100%;margin:0;padding:0;background-color:#111318;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,16px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}body{min-height:max(884px,100dvh);}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "inverse-surface": "#e2e2e9",
+          "error-container": "#93000a",
+          "outline-variant": "#2D323E",
+          "surface-container": "#1e2025",
+          "on-error": "#690005",
+          "surface-container-low": "#1a1d24",
+          "on-secondary-container": "#b1b5c2",
+          "surface-variant": "#222630",
+          "on-secondary-fixed": "#171b25",
+          "on-primary-fixed": "#111318",
+          "background": "#111318",
+          "on-primary-container": "#4a6e00",
+          "on-primary": "#111318",
+          "inverse-primary": "#466800",
+          "surface-container-high": "#282a2f",
+          "secondary-container": "#222630",
+          "surface-bright": "#37393f",
+          "on-surface-variant": "#A0A5AA",
+          "error": "#ffb4ab",
+          "primary-fixed": "#baf55b",
+          "secondary": "#A0A5AA",
+          "on-secondary": "#2c303b",
+          "on-tertiary": "#003919",
+          "surface-container-lowest": "#0c0e13",
+          "on-error-container": "#ffdad6",
+          "surface-dim": "#111318",
+          "on-tertiary-container": "#6cfd9b",
+          "on-primary-fixed-variant": "#334f00",
+          "tertiary-container": "#004d25",
+          "tertiary": "#4de082",
+          "on-tertiary-fixed-variant": "#005227",
+          "secondary-fixed": "#dfe2f0",
+          "tertiary-fixed-dim": "#4de082",
+          "surface-tint": "#b9f45a",
+          "primary-container": "#b9f45a",
+          "surface": "#111318",
+          "primary": "#b9f45a",
+          "on-secondary-fixed-variant": "#434752",
+          "on-tertiary-fixed": "#00210c",
+          "on-surface": "#F7F8F4",
+          "surface-container-highest": "#2c303b",
+          "on-background": "#F7F8F4",
+          "secondary-fixed-dim": "#c3c6d3",
+          "outline": "#434937",
+          "primary-fixed-dim": "#9fd841",
+          "tertiary-fixed": "#6dfe9c",
+          "inverse-on-surface": "#2e3036"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter-mobile": "0.75rem",
+          "space-xl": "2rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "margin-mobile": "1rem",
+          "margin": "1.25rem",
+          "space-lg": "1.5rem",
+          "gutter": "1rem",
+          "space-md": "1rem"
+        },
+        "fontFamily": {
+          "display-lg": ["Plus Jakarta Sans"],
+          "headline-lg": ["Plus Jakarta Sans"],
+          "body-sm": ["Plus Jakarta Sans"],
+          "headline-md": ["Plus Jakarta Sans"],
+          "title-md": ["Plus Jakarta Sans"],
+          "title-lg": ["Plus Jakarta Sans"],
+          "label-md": ["JetBrains Mono"],
+          "label-caps": ["Plus Jakarta Sans"],
+          "headline-sm": ["Plus Jakarta Sans"],
+          "body-lg": ["Plus Jakarta Sans"],
+          "label-sm": ["JetBrains Mono"],
+          "label-lg": ["Plus Jakarta Sans"],
+          "body-md": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+          "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+          "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+          "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+          "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+          "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+          "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+          "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+        }
+      }
+    }
+  }
+</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-fixed"><header class="fixed top-0 w-full z-50 bg-[#111318]/90 backdrop-blur-xl border-b border-[#2D323E]/50"><div class="w-full pt-safe"><div class="flex items-center justify-between px-margin h-6 text-[#A0A5AA] font-label-md text-body-sm"><span class="tracking-tight font-medium">09:41</span><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span><span class="material-symbols-outlined text-[15px]">wifi</span><span class="material-symbols-outlined text-[16px]">battery_full</span></div></div></div><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-[#1A1D24] active:scale-95 transition-all" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-title-lg text-title-lg text-on-surface tracking-tight truncate pl-1">Privacy Flow</h1></div><div class="w-8 h-8 rounded-full bg-[#B9F45A] flex items-center justify-center"><span class="material-symbols-outlined text-[#111318] text-[18px]">person</span></div></div></header><main class="flex-1 flex flex-col relative w-full pt-22 pb-safe px-margin bg-surface"><div class="flex flex-col w-full pb-8">
+<!-- Eyebrow & Hero Title Area -->
+<div class="flex flex-col gap-space-xs mb-space-lg">
+<div class="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary-container" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span>PRIVACY CHARTER</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">
+      Your privacy comes first.
+    </h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mt-1">
+      OutLoop's prototype uses Android Accessibility Service to inspect limited interface structure while Instagram is open. It does not need to read your messages or collect your personal content.
+    </p>
+</div>
+<!-- Key Privacy Cards Stack -->
+<div class="flex flex-col gap-3 mb-space-lg">
+<!-- Card 1: Local-Only Pipeline -->
+<div class="bg-surface-container-low rounded-2xl p-space-md flex items-start gap-3.5 transition-all active:bg-surface-container">
+<div class="w-10 h-10 rounded-xl bg-primary-container/15 flex items-center justify-center shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">Local-Only Processing Pipeline</span>
+<span class="font-label-sm text-label-sm text-primary-container font-medium mt-0.5">Strictly bounded sandbox • Zero network sync</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
+          Screen structural trees are parsed in real time entirely in memory and wiped immediately upon dismissal.
+        </p>
+</div>
+</div>
+<!-- Card 2: Diagnostics Off by Default -->
+<div class="bg-surface-container-low rounded-2xl p-space-md flex items-start gap-3.5 transition-all active:bg-surface-container">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">power_settings_new</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Diagnostics are off until you start a session</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
+          You decide when analysis begins. Zero background monitoring or phantom resource drain when inactive.
+        </p>
+</div>
+</div>
+<!-- Card 3: Results Stay on Device -->
+<div class="bg-surface-container-low rounded-2xl p-space-md flex items-start gap-3.5 transition-all active:bg-surface-container">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Results stay on your device</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
+          Everything runs locally. No cloud sync, no tracking, zero telemetry sent to remote analytics servers.
+        </p>
+</div>
+</div>
+<!-- Card 4: Stop or Disable Anytime -->
+<div class="bg-surface-container-low rounded-2xl p-space-md flex items-start gap-3.5 transition-all active:bg-surface-container">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">pause_circle</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Stop or disable at any time</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
+          You can pause diagnostics instantly via notification or revoke Android Accessibility permission in system settings.
+        </p>
+</div>
+</div>
+</div>
+<!-- System Security Notice Box -->
+<div class="bg-surface-container rounded-2xl p-4 flex items-start gap-3 mb-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">security</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface-variant font-bold">System Notice</span>
+<p class="font-body-sm text-body-sm text-on-surface mt-0.5 leading-snug">
+        Accessibility access is powerful. Only enable it if you understand and agree to how this prototype operates.
+      </p>
+</div>
+</div>
+<!-- Prototype Clarification Info Banner -->
+<div class="bg-surface-container-lowest rounded-2xl p-3.5 flex items-center gap-3 mb-space-xl">
+<span class="material-symbols-outlined text-primary-container text-[20px] shrink-0">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">
+      This screen leads to a separate confirmation step before opening Android Accessibility settings. OutLoop never opens settings automatically.
+    </p>
+</div>
+<!-- Interactive Action Buttons -->
+<div class="flex flex-col gap-2.5 w-full mt-auto">
+<button class="w-full h-14 bg-primary-container text-on-primary-fixed rounded-2xl flex items-center justify-center gap-2 font-title-md text-title-md font-semibold tracking-tight shadow-md active:scale-[0.98] transition-transform" id="continueBtn" type="button">
+<span>I understand — continue</span>
+<span class="material-symbols-outlined text-[20px] font-semibold">arrow_forward</span>
+</button>
+<button class="w-full h-12 bg-transparent text-on-surface-variant rounded-2xl flex items-center justify-center font-title-md text-title-md font-medium active:bg-surface-container-low transition-colors" onclick="history.back()" type="button">
+<span>Not now</span>
+</button>
+</div>
+</div>
+<script>
+  document.getElementById('continueBtn')?.addEventListener('click', function() {
+    this.classList.add('opacity-90');
+    const label = this.querySelector('span:first-child');
+    if (label) {
+      label.textContent = 'Preparing configuration...';
+    }
+  });
+</script></main></body></html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="h-full dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;min-height:100%;margin:0;padding:0;background-color:#111318;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,16px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}body{min-height:max(884px,100dvh);}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "inverse-surface": "#e2e2e9",
+          "error-container": "#93000a",
+          "outline-variant": "#2D323E",
+          "surface-container": "#1e2025",
+          "on-error": "#690005",
+          "surface-container-low": "#1a1d24",
+          "on-secondary-container": "#b1b5c2",
+          "surface-variant": "#222630",
+          "on-secondary-fixed": "#171b25",
+          "on-primary-fixed": "#111318",
+          "background": "#111318",
+          "on-primary-container": "#4a6e00",
+          "on-primary": "#111318",
+          "inverse-primary": "#466800",
+          "surface-container-high": "#282a2f",
+          "secondary-container": "#222630",
+          "surface-bright": "#37393f",
+          "on-surface-variant": "#A0A5AA",
+          "error": "#ffb4ab",
+          "primary-fixed": "#baf55b",
+          "secondary": "#A0A5AA",
+          "on-secondary": "#2c303b",
+          "on-tertiary": "#003919",
+          "surface-container-lowest": "#0c0e13",
+          "on-error-container": "#ffdad6",
+          "surface-dim": "#111318",
+          "on-tertiary-container": "#6cfd9b",
+          "on-primary-fixed-variant": "#334f00",
+          "tertiary-container": "#004d25",
+          "tertiary": "#4de082",
+          "on-tertiary-fixed-variant": "#005227",
+          "secondary-fixed": "#dfe2f0",
+          "tertiary-fixed-dim": "#4de082",
+          "surface-tint": "#b9f45a",
+          "primary-container": "#b9f45a",
+          "surface": "#111318",
+          "primary": "#b9f45a",
+          "on-secondary-fixed-variant": "#434752",
+          "on-tertiary-fixed": "#00210c",
+          "on-surface": "#F7F8F4",
+          "surface-container-highest": "#2c303b",
+          "on-background": "#F7F8F4",
+          "secondary-fixed-dim": "#c3c6d3",
+          "outline": "#434937",
+          "primary-fixed-dim": "#9fd841",
+          "tertiary-fixed": "#6dfe9c",
+          "inverse-on-surface": "#2e3036"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter-mobile": "0.75rem",
+          "space-xl": "2rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "margin-mobile": "1rem",
+          "margin": "1.25rem",
+          "space-lg": "1.5rem",
+          "gutter": "1rem",
+          "space-md": "1rem"
+        },
+        "fontFamily": {
+          "display-lg": ["Plus Jakarta Sans"],
+          "headline-lg": ["Plus Jakarta Sans"],
+          "body-sm": ["Plus Jakarta Sans"],
+          "headline-md": ["Plus Jakarta Sans"],
+          "title-md": ["Plus Jakarta Sans"],
+          "title-lg": ["Plus Jakarta Sans"],
+          "label-md": ["JetBrains Mono"],
+          "label-caps": ["Plus Jakarta Sans"],
+          "headline-sm": ["Plus Jakarta Sans"],
+          "body-lg": ["Plus Jakarta Sans"],
+          "label-sm": ["JetBrains Mono"],
+          "label-lg": ["Plus Jakarta Sans"],
+          "body-md": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+          "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+          "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+          "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+          "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+          "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+          "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+          "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+        }
+      }
+    }
+  }
+</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-fixed"><header class="fixed top-0 w-full z-50 bg-[#111318]/90 backdrop-blur-xl border-b border-[#2D323E]/50"><div class="w-full pt-safe"><div class="flex items-center justify-between px-margin h-6 text-[#A0A5AA] font-label-md text-body-sm"><span class="tracking-tight font-medium">09:41</span><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span><span class="material-symbols-outlined text-[15px]">wifi</span><span class="material-symbols-outlined text-[16px]">battery_full</span></div></div></div><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-[#1A1D24] active:scale-95 transition-all" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-title-lg text-title-lg text-on-surface tracking-tight truncate pl-1">Privacy Flow</h1></div><div class="w-8 h-8 rounded-full bg-[#B9F45A] flex items-center justify-center"><span class="material-symbols-outlined text-[#111318] text-[18px]">person</span></div></div></header><main class="flex-1 flex flex-col relative w-full pt-22 pb-safe px-margin bg-surface"><div class="flex flex-col w-full pb-8 space-y-space-md">
+<!-- Service Status Multi-State Grid -->
+<section class="grid grid-cols-3 gap-2.5">
+<!-- Accessibility Service -->
+<div class="bg-[#1A1D24] border border-[#2D323E] p-3 rounded-2xl flex flex-col justify-between min-h-[96px]">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[#B9F45A] text-[20px]" style="font-variation-settings: 'FILL' 1;">accessibility_new</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#B9F45A]/15 text-[#B9F45A]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B9F45A]"></span>
+<span class="font-label-caps text-label-caps uppercase">Active</span>
+</span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-[#A0A5AA] uppercase tracking-wider">Service</p>
+<p class="font-label-lg text-label-lg text-on-surface truncate">Enabled</p>
+</div>
+</div>
+<!-- Connection State -->
+<div class="bg-[#1A1D24] border border-[#2D323E] p-3 rounded-2xl flex flex-col justify-between min-h-[96px]">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[#4de082] text-[20px]" style="font-variation-settings: 'FILL' 1;">hub</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#004d25]/60 text-[#6cfd9b]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4de082]"></span>
+<span class="font-label-caps text-label-caps uppercase">Bound</span>
+</span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-[#A0A5AA] uppercase tracking-wider">Connection</p>
+<p class="font-label-lg text-label-lg text-on-surface truncate">Connected</p>
+</div>
+</div>
+<!-- Session State -->
+<div class="bg-[#1A1D24] border border-[#2D323E] p-3 rounded-2xl flex flex-col justify-between min-h-[96px]" id="status-card-session">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[#A0A5AA] text-[20px]" id="session-icon">pause_circle</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#222630] text-[#A0A5AA] border border-[#2D323E]" id="session-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0A5AA]" id="session-dot"></span>
+<span class="font-label-caps text-label-caps uppercase" id="session-chip-text">Idle</span>
+</span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-[#A0A5AA] uppercase tracking-wider">Session</p>
+<p class="font-label-lg text-label-lg text-on-surface truncate" id="session-status-text">Stopped</p>
+</div>
+</div>
+</section>
+<!-- Prototype Boundary Info Banner -->
+<aside class="bg-[#1A1D24] border border-[#2D323E] rounded-2xl p-3.5 flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-[#222630] border border-[#2D323E] flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[#F7F8F4] text-[18px]">verified_user</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<h2 class="font-label-lg text-label-lg text-on-surface">Prototype Boundary</h2>
+<span class="font-label-caps text-label-caps bg-[#222630] border border-[#2D323E] px-1.5 py-0.5 rounded text-[#A0A5AA] font-medium">PASSIVE</span>
+</div>
+<p class="font-body-sm text-body-sm text-[#A0A5AA] mt-0.5 leading-snug">
+        This research module detects local interface nodes. It does not alter, interrupt, or block Instagram traffic.
+      </p>
+</div>
+</aside>
+<!-- Main Diagnostic Control Hub -->
+<section class="bg-[#1A1D24] border border-[#2D323E] rounded-3xl p-5 space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="font-label-caps text-label-caps uppercase tracking-wider text-[#A0A5AA]">Inspection Engine</p>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-0.5" id="engine-headline">Session Standby</h3>
+</div>
+<div class="w-10 h-10 rounded-2xl bg-[#222630] border border-[#2D323E] flex items-center justify-center">
+<span class="material-symbols-outlined text-[#A0A5AA] text-[22px]" id="engine-glyph">radar</span>
+</div>
+</div>
+<!-- Active Indicator Bar (Animated dynamically on start) -->
+<div class="bg-[#222630] h-1.5 w-full rounded-full overflow-hidden hidden" id="inspection-meter">
+<div class="h-full bg-[#B9F45A] rounded-full w-2/3 animate-pulse"></div>
+</div>
+<!-- Primary Action Trigger -->
+<button class="w-full h-[52px] bg-[#B9F45A] hover:bg-[#a9e44d] text-[#111318] rounded-2xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(185,244,90,0.15)]" id="toggle-session-btn" type="button">
+<span class="material-symbols-outlined text-[20px]" id="btn-icon" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span id="btn-label">Start Diagnostic Session</span>
+</button>
+<!-- Inspection Scope Disclaimer -->
+<p class="font-body-sm text-body-sm text-[#686D76] text-center px-1">
+      Authorizes temporary local structural inspection while Instagram is active. OutLoop records sanitized node classification stamps only.
+    </p>
+</section>
+<!-- Diagnostics Scope / Testing Criteria Checklist -->
+<section class="bg-[#1A1D24] border border-[#2D323E] rounded-3xl p-5 space-y-3.5">
+<div class="flex items-center justify-between">
+<h3 class="font-title-lg text-title-lg text-on-surface">Classification Scope</h3>
+<span class="font-label-caps text-label-caps bg-[#222630] border border-[#2D323E] px-2 py-0.5 rounded-full text-[#A0A5AA]">5 CHECKS ACTIVE</span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-[#222630] border border-[#2D323E]">
+<span class="material-symbols-outlined text-[#B9F45A] text-[18px] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Reels Tab Identification</p>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Deterministic structural node tree match</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-[#222630] border border-[#2D323E]">
+<span class="material-symbols-outlined text-[#B9F45A] text-[18px] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Direct Messages &amp; Conversations</p>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Guaranteed safe exclusion bypass</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-[#222630] border border-[#2D323E]">
+<span class="material-symbols-outlined text-[#B9F45A] text-[18px] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Stories &amp; Author Profiles</p>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Verified uninterrupted browsing state</p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-[#222630] border border-[#2D323E]">
+<span class="material-symbols-outlined text-[#B9F45A] text-[18px] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Home Feed Distinction</p>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Differentiates standard vertical post scroll</p>
+</div>
+</div>
+<!-- Item 5 -->
+<div class="flex items-start gap-3 p-2.5 rounded-xl bg-[#222630] border border-[#2D323E]">
+<span class="material-symbols-outlined text-[#B9F45A] text-[18px] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Unknown Frame Fallback</p>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Instant fail-safe fallback without latency</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary Actions & Log Navigation -->
+<section class="bg-[#1A1D24] border border-[#2D323E] rounded-3xl p-4 space-y-3">
+<!-- Live Stream Navigation Tile -->
+<a class="w-full flex items-center justify-between p-3 rounded-2xl bg-[#222630] border border-[#2D323E] text-on-surface active:scale-[0.99] transition-all hover:bg-[#282d38]" href="javascript:void(0)">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#B9F45A]/15 border border-[#B9F45A]/30 flex items-center justify-center text-[#B9F45A]">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface">View Live Results Stream</span>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Real-time local node telemetry</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#A0A5AA] text-[20px]">arrow_forward</span>
+</a>
+<!-- Clear Log entries Trigger -->
+<div class="pt-1">
+<button class="w-full h-11 rounded-2xl bg-[#222630] border border-[#2D323E] hover:bg-[#282d38] flex items-center justify-center gap-2 text-on-surface active:scale-[0.98] transition-all" id="clear-log-btn" type="button">
+<span class="material-symbols-outlined text-[18px] text-[#A0A5AA]">delete_sweep</span>
+<span class="font-label-lg text-label-lg text-on-surface">Clear Diagnostic Results</span>
+</button>
+<p class="font-body-sm text-body-sm text-[#686D76] text-center mt-2">
+        Prompts confirmation before purging local session records.
+      </p>
+</div>
+</section>
+<!-- Confirmation Modal Sheet (Micro-interaction) -->
+<div class="fixed inset-0 z-50 bg-[#0c0e13]/80 backdrop-blur-sm flex items-end justify-center px-4 pb-6 hidden" id="clear-dialog">
+<div class="bg-[#1A1D24] border border-[#2D323E] w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#93000a] text-[#ffdad6] flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Purge Diagnostics?</h4>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Local log entries will be wiped clean.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2">
+<button class="h-11 rounded-xl bg-[#222630] border border-[#2D323E] text-on-surface font-label-lg text-label-lg" id="cancel-clear-btn" type="button">Cancel</button>
+<button class="h-11 rounded-xl bg-[#ba1a1a] text-white font-label-lg text-label-lg font-semibold" id="confirm-clear-btn" type="button">Purge All</button>
+</div>
+</div>
+</div>
+<!-- Bottom Research Architecture Stamp -->
+<footer class="pt-2 flex flex-col items-center justify-center space-y-1">
+<div class="flex items-center gap-1.5 text-[#A0A5AA]">
+<span class="material-symbols-outlined text-[15px]">lock_reset</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-[#A0A5AA]">Local Research Build</span>
+</div>
+<p class="font-body-sm text-body-sm text-[#686D76] text-center">
+      No cloud connection • Zero telemetry transmitted • Sandbox storage
+    </p>
+</footer>
+</div>
+<script>
+  (function initDiagnostics() {
+    let isRunning = false;
+
+    const toggleBtn = document.getElementById('toggle-session-btn');
+    const btnIcon = document.getElementById('btn-icon');
+    const btnLabel = document.getElementById('btn-label');
+    const engineHeadline = document.getElementById('engine-headline');
+    const engineGlyph = document.getElementById('engine-glyph');
+    const inspectionMeter = document.getElementById('inspection-meter');
+
+    const sessionIcon = document.getElementById('session-icon');
+    const sessionChipText = document.getElementById('session-chip-text');
+    const sessionStatusText = document.getElementById('session-status-text');
+    const sessionDot = document.getElementById('session-dot');
+    const sessionBadge = document.getElementById('session-badge');
+
+    const clearBtn = document.getElementById('clear-log-btn');
+    const clearDialog = document.getElementById('clear-dialog');
+    const cancelClearBtn = document.getElementById('cancel-clear-btn');
+    const confirmClearBtn = document.getElementById('confirm-clear-btn');
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        isRunning = !isRunning;
+        if (isRunning) {
+          btnLabel.textContent = 'Stop Inspection Session';
+          btnIcon.textContent = 'stop_circle';
+          toggleBtn.className = 'w-full h-[52px] bg-[#222630] border border-[#2D323E] text-[#B9F45A] hover:bg-[#282d38] rounded-2xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all';
+          engineHeadline.textContent = 'Local Inspection Active';
+          engineGlyph.classList.add('text-[#B9F45A]');
+          engineGlyph.classList.remove('text-[#A0A5AA]');
+          inspectionMeter.classList.remove('hidden');
+
+          sessionIcon.textContent = 'play_circle';
+          sessionIcon.className = 'material-symbols-outlined text-[#B9F45A] text-[20px]';
+          sessionChipText.textContent = 'Live';
+          sessionStatusText.textContent = 'Running';
+          sessionDot.className = 'w-1.5 h-1.5 rounded-full bg-[#B9F45A]';
+          sessionBadge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#B9F45A]/15 text-[#B9F45A] border border-[#B9F45A]/30';
+        } else {
+          btnLabel.textContent = 'Start Diagnostic Session';
+          btnIcon.textContent = 'play_arrow';
+          toggleBtn.className = 'w-full h-[52px] bg-[#B9F45A] hover:bg-[#a9e44d] text-[#111318] rounded-2xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(185,244,90,0.15)]';
+          engineHeadline.textContent = 'Session Standby';
+          engineGlyph.classList.remove('text-[#B9F45A]');
+          engineGlyph.classList.add('text-[#A0A5AA]');
+          inspectionMeter.classList.add('hidden');
+
+          sessionIcon.textContent = 'pause_circle';
+          sessionIcon.className = 'material-symbols-outlined text-[#A0A5AA] text-[20px]';
+          sessionChipText.textContent = 'Idle';
+          sessionStatusText.textContent = 'Stopped';
+          sessionDot.className = 'w-1.5 h-1.5 rounded-full bg-[#A0A5AA]';
+          sessionBadge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#222630] text-[#A0A5AA] border border-[#2D323E]';
+        }
+      });
+    }
+
+    if (clearBtn && clearDialog) {
+      clearBtn.addEventListener('click', () => {
+        clearDialog.classList.remove('hidden');
+      });
+    }
+
+    if (cancelClearBtn && clearDialog) {
+      cancelClearBtn.addEventListener('click', () => {
+        clearDialog.classList.add('hidden');
+      });
+    }
+
+    if (confirmClearBtn && clearDialog) {
+      confirmClearBtn.addEventListener('click', () => {
+        clearDialog.classList.add('hidden');
+        clearBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-[#4de082]">check</span><span class="font-label-lg text-label-lg text-[#4de082]">Purged Local Records</span>';
+        setTimeout(() => {
+          clearBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-[#A0A5AA]">delete_sweep</span><span class="font-label-lg text-label-lg text-on-surface">Clear Diagnostic Results</span>';
+        }, 2200);
+      });
+    }
+  })();
+</script></main></body></html>

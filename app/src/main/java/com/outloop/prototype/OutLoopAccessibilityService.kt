@@ -27,6 +27,7 @@ class OutLoopAccessibilityService : AccessibilityService() {
 
     private val classifier = ScreenClassifier()
     private var lastInspectionUptimeMs = 0L
+    private var restrictionOverlay: com.outloop.prototype.restriction.ReelsRestrictionOverlay? = null
 
     companion object {
         const val TARGET_PACKAGE = "com.instagram.android"
@@ -37,17 +38,27 @@ class OutLoopAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         DiagnosticSessionRepository.setServiceConnected(true)
+        com.outloop.prototype.reminder.ReelsReminderManager.initPreferences(this)
+        restrictionOverlay = com.outloop.prototype.restriction.ReelsRestrictionOverlay(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         // 1. Validate event and early-filter target package
         if (event == null) return
         val eventPackage = event.packageName?.toString()
-        if (eventPackage != TARGET_PACKAGE) return
+        if (eventPackage != TARGET_PACKAGE) {
+            // Dismiss overlay immediately if user leaves Instagram
+            restrictionOverlay?.dismiss()
+            return
+        }
 
-        // 2. Gate processing on active diagnostic session
-        // If the user has not started or has stopped a session, do zero inspection!
-        if (!DiagnosticSessionRepository.isSessionActive.value) {
+        // 2. Ensure preferences are loaded and gate processing on active diagnostic session, active Reels reminders, or daily allowance
+        com.outloop.prototype.reminder.ReelsReminderManager.initPreferences(this)
+        val isDiagnosticActive = DiagnosticSessionRepository.isSessionActive.value
+        val isReminderActive = com.outloop.prototype.reminder.ReelsReminderManager.isReminderEnabled.value
+        val isAllowanceActive = com.outloop.prototype.allowance.ReelsAllowanceManager.getInstance(this).isAllowanceEnabled.value
+        if (!isDiagnosticActive && !isReminderActive && !isAllowanceActive) {
+            restrictionOverlay?.dismiss()
             return
         }
 
@@ -149,24 +160,26 @@ class OutLoopAccessibilityService : AccessibilityService() {
                     "No accessibility root available for Instagram window ($eventTypeString)."
                 }
                 // Do not update lastInspectionUptimeMs on null root so subsequent settled events are not throttled
-                DiagnosticSessionRepository.recordResult(
-                    ClassificationResult(
-                        candidateState = CandidateScreenState.UNKNOWN,
-                        confidence = Confidence.LOW,
-                        reasonCode = ReasonCode.MISSING_ROOT,
-                        timestamp = System.currentTimeMillis(),
-                        evidenceExplanation = explanation,
-                        isDeviceVerified = false,
-                        diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
-                            eventType = eventTypeString,
-                            isInstagramPackage = true,
-                            hasRootNode = false,
-                            nodesVisited = 0,
-                            observationOutcome = com.outloop.classifier.ObservationOutcome.ROOT_UNAVAILABLE,
-                            rootAcquisitionMethod = "NONE"
-                        )
+                val nullRootResult = ClassificationResult(
+                    candidateState = CandidateScreenState.UNKNOWN,
+                    confidence = Confidence.LOW,
+                    reasonCode = ReasonCode.MISSING_ROOT,
+                    timestamp = System.currentTimeMillis(),
+                    evidenceExplanation = explanation,
+                    isDeviceVerified = false,
+                    diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
+                        eventType = eventTypeString,
+                        isInstagramPackage = true,
+                        hasRootNode = false,
+                        nodesVisited = 0,
+                        observationOutcome = com.outloop.classifier.ObservationOutcome.ROOT_UNAVAILABLE,
+                        rootAcquisitionMethod = "NONE"
                     )
                 )
+                DiagnosticSessionRepository.recordResult(nullRootResult)
+                com.outloop.prototype.reminder.ReelsReminderManager.onClassificationResult(this, nullRootResult)
+                com.outloop.prototype.allowance.ReelsAllowanceManager.onClassificationResult(this, nullRootResult)
+                restrictionOverlay?.dismiss()
                 return
             }
 
@@ -184,36 +197,50 @@ class OutLoopAccessibilityService : AccessibilityService() {
                 eventType = eventTypeString,
                 isPartialTree = isPartialTree,
                 rootAcquisitionMethod = rootAcquisitionMethod,
-                captureTreeDump = DiagnosticSessionRepository.isDetailedTreeDumpEnabled.value
+                captureTreeDump = isDiagnosticActive && DiagnosticSessionRepository.isDetailedTreeDumpEnabled.value
             )
 
             // 6. Classify sanitized structure
             val result = classifier.classify(snapshot)
 
-            // 7. Record result in local diagnostic session
+            // 7. Record result in local diagnostic session and update reminder tracker
             DiagnosticSessionRepository.recordResult(result)
+            com.outloop.prototype.reminder.ReelsReminderManager.onClassificationResult(this, result)
 
+            // 8. Evaluate daily allowance and update restriction overlay
+            val requiresRestriction = com.outloop.prototype.allowance.ReelsAllowanceManager.onClassificationResult(this, result)
+            if (requiresRestriction) {
+                val allowanceManager = com.outloop.prototype.allowance.ReelsAllowanceManager.getInstance(this)
+                restrictionOverlay?.show(
+                    allowanceMinutes = allowanceManager.dailyLimitMinutes.value,
+                    accumulatedMs = allowanceManager.accumulatedDailyTimeMs
+                )
+            } else {
+                restrictionOverlay?.dismiss()
+            }
 
         } catch (e: Exception) {
             // Graceful exception handling: record diagnostic error without crashing or leaking state
-            DiagnosticSessionRepository.recordResult(
-                ClassificationResult(
-                    candidateState = CandidateScreenState.UNKNOWN,
-                    confidence = Confidence.LOW,
-                    reasonCode = ReasonCode.UNSUPPORTED_STRUCTURE,
-                    timestamp = System.currentTimeMillis(),
-                    evidenceExplanation = "Exception during hierarchy inspection: ${e.javaClass.simpleName}",
-                    isDeviceVerified = false,
-                    diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
-                        eventType = eventTypeString,
-                        isInstagramPackage = true,
-                        hasRootNode = rootNode != null,
-                        nodesVisited = 0
-                    )
+            restrictionOverlay?.dismiss()
+            val errResult = ClassificationResult(
+                candidateState = CandidateScreenState.UNKNOWN,
+                confidence = Confidence.LOW,
+                reasonCode = ReasonCode.UNSUPPORTED_STRUCTURE,
+                timestamp = System.currentTimeMillis(),
+                evidenceExplanation = "Exception during hierarchy inspection: ${e.javaClass.simpleName}",
+                isDeviceVerified = false,
+                diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
+                    eventType = eventTypeString,
+                    isInstagramPackage = true,
+                    hasRootNode = rootNode != null,
+                    nodesVisited = 0
                 )
             )
+            DiagnosticSessionRepository.recordResult(errResult)
+            com.outloop.prototype.reminder.ReelsReminderManager.onClassificationResult(this, errResult)
+            com.outloop.prototype.allowance.ReelsAllowanceManager.onClassificationResult(this, errResult)
         } finally {
-            // 8. Promptly release node references
+            // 9. Promptly release node references
             @Suppress("DEPRECATION")
             rootNode?.recycle()
         }
@@ -221,15 +248,23 @@ class OutLoopAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         // Required by AccessibilityService: gracefully handle service interruption
+        restrictionOverlay?.dismiss()
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
+        restrictionOverlay?.dismiss()
         DiagnosticSessionRepository.setServiceConnected(false)
+        com.outloop.prototype.reminder.ReelsReminderManager.syncState()
+        com.outloop.prototype.allowance.ReelsAllowanceManager.getInstance(this).syncState()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        restrictionOverlay?.dismiss()
+        restrictionOverlay = null
         DiagnosticSessionRepository.setServiceConnected(false)
+        com.outloop.prototype.reminder.ReelsReminderManager.syncState()
+        com.outloop.prototype.allowance.ReelsAllowanceManager.getInstance(this).syncState()
         super.onDestroy()
     }
 }

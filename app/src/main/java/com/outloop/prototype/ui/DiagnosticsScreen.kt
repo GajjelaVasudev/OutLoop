@@ -11,13 +11,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -92,62 +95,78 @@ fun DiagnosticsScreen(
     onStartSession: () -> Unit,
     onStopSession: () -> Unit,
     onClearResults: () -> Unit,
-    onOpenAccessibilitySettings: () -> Unit
+    onOpenAccessibilitySettings: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     var showConsentDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = DarkBackground
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = innerPadding.calculateTopPadding() + 12.dp,
+                bottom = innerPadding.calculateBottomPadding() + 24.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            item(key = "header") {
+                HeaderSection(onBack = onBack)
+            }
 
-            // Branding Header
-            HeaderSection()
+            item(key = "experiment_overview") {
+                ExperimentOverviewCard()
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item(key = "status_panel") {
+                StatusPanel(
+                    isServiceEnabled = isServiceEnabledInSettings,
+                    isServiceConnected = isServiceConnected,
+                    isSessionActive = isSessionActive,
+                    onRequestEnableService = { showConsentDialog = true }
+                )
+            }
 
-            // Experiment Overview Card
-            ExperimentOverviewCard()
+            item(key = "diagnostic_controls") {
+                DiagnosticControlsCard(
+                    isServiceConnected = isServiceConnected,
+                    isSessionActive = isSessionActive,
+                    hasResults = diagnosticResults.isNotEmpty(),
+                    results = diagnosticResults,
+                    totalRecordedCount = totalRecordedCount,
+                    onStartSession = onStartSession,
+                    onStopSession = onStopSession,
+                    onClearResults = onClearResults
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item(key = "reminder_card") {
+                ReminderSettingsCard()
+            }
 
-            // System & Session Status Panel
-            StatusPanel(
-                isServiceEnabled = isServiceEnabledInSettings,
-                isServiceConnected = isServiceConnected,
-                isSessionActive = isSessionActive,
-                onRequestEnableService = { showConsentDialog = true }
-            )
+            item(key = "results_header") {
+                ResultsHeader(
+                    resultsCount = diagnosticResults.size,
+                    totalRecordedCount = totalRecordedCount,
+                    isSessionActive = isSessionActive
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Control Actions
-            ControlBar(
-                isServiceConnected = isServiceConnected,
-                isSessionActive = isSessionActive,
-                hasResults = diagnosticResults.isNotEmpty(),
-                results = diagnosticResults,
-                totalRecordedCount = totalRecordedCount,
-                onStartSession = onStartSession,
-                onStopSession = onStopSession,
-                onClearResults = onClearResults
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Live Results List
-            ResultsSection(
-                results = diagnosticResults,
-                totalRecordedCount = totalRecordedCount,
-                isSessionActive = isSessionActive,
-                modifier = Modifier.weight(1f)
-            )
+            if (diagnosticResults.isEmpty()) {
+                item(key = "empty_results") {
+                    EmptyResultsView(isSessionActive)
+                }
+            } else {
+                items(
+                    items = diagnosticResults,
+                    key = { "${it.timestamp}_${it.hashCode()}" }
+                ) { resultItem ->
+                    ResultItemCard(resultItem)
+                }
+            }
         }
     }
 
@@ -163,18 +182,34 @@ fun DiagnosticsScreen(
 }
 
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(onBack: (() -> Unit)? = null) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .width(10.dp)
-                    .height(28.dp)
-                    .background(PrimaryIndigo, RoundedCornerShape(4.dp))
-            )
+            if (onBack != null) {
+                androidx.compose.material3.IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(SurfaceLightDark, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .width(10.dp)
+                        .height(28.dp)
+                        .background(PrimaryIndigo, RoundedCornerShape(4.dp))
+                )
+            }
             Text(
                 text = stringResource(id = R.string.app_name),
                 color = TextPrimary,
@@ -199,7 +234,7 @@ private fun HeaderSection() {
             color = TextSecondary,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(start = 18.dp, top = 2.dp)
+            modifier = Modifier.padding(start = if (onBack != null) 44.dp else 18.dp, top = 2.dp)
         )
     }
 }
@@ -308,9 +343,11 @@ private fun StatusPanel(
                     OutlinedButton(
                         onClick = onRequestEnableService,
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                     ) {
-                        Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.height(16.dp))
+                        Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(text = "Configure in Android Settings", fontSize = 13.sp)
                     }
@@ -383,7 +420,7 @@ private fun generateStructuralTreeReport(
 }
 
 @Composable
-private fun ControlBar(
+private fun DiagnosticControlsCard(
     isServiceConnected: Boolean,
     isSessionActive: Boolean,
     hasResults: Boolean,
@@ -418,64 +455,112 @@ private fun ControlBar(
         }
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (!isSessionActive) {
-                Button(
-                    onClick = {
-                        statusMessage = null
-                        onStartSession()
-                    },
-                    enabled = isServiceConnected,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Start Session", fontSize = 12.sp)
-                }
-            } else {
-                Button(
-                    onClick = {
-                        statusMessage = null
-                        onStopSession()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Stop Session", fontSize = 12.sp)
-                }
-            }
-
-            if (hasResults) {
-                OutlinedButton(
-                    onClick = {
-                        statusMessage = null
-                        onClearResults()
-                    },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(text = "Clear", fontSize = 11.sp)
-                }
-            }
-        }
-
-        if (hasResults) {
-            Spacer(modifier = Modifier.height(6.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Copy Sanitized Report button
+                Text(
+                    text = "Diagnostic Controls",
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                val badgeColor = if (isSessionActive) AccentEmerald else TextMuted
+                Surface(
+                    color = badgeColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = if (isSessionActive) "LIVE SESSION" else "STOPPED",
+                        color = badgeColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // Primary Session Action Button (Start / Stop) + Clear Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (!isSessionActive) {
+                    Button(
+                        onClick = {
+                            statusMessage = null
+                            onStartSession()
+                        },
+                        enabled = isServiceConnected,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Start Diagnostic Session",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            statusMessage = null
+                            onStopSession()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Stop Diagnostic Session",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                if (hasResults) {
+                    OutlinedButton(
+                        onClick = {
+                            statusMessage = null
+                            onClearResults()
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Clear", fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // Export Actions: Copy Sanitized Report, Save File, Copy Tree
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Copy Sanitized Report button - prominent and easy to find
                 OutlinedButton(
                     onClick = {
                         val export = SanitizedReportExporter.generateSanitizedReport(
@@ -485,7 +570,7 @@ private fun ControlBar(
                             isSessionActive = isSessionActive
                         )
                         if (export.sizeBytes > SanitizedReportExporter.SAFE_CLIPBOARD_BYTE_LIMIT) {
-                            statusMessage = "Report is ${export.formattedSize} (too large for clipboard). Tap 'Save File' below."
+                            statusMessage = "Report is ${export.formattedSize} (too large for clipboard). Tap 'Save File'."
                             statusIsError = true
                         } else {
                             try {
@@ -498,20 +583,58 @@ private fun ControlBar(
                             }
                         }
                     },
+                    enabled = hasResults,
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1.1f)
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Icon(
                         Icons.Default.Share,
                         contentDescription = "Copy Sanitized Report",
-                        tint = PrimaryIndigo,
-                        modifier = Modifier.height(14.dp)
+                        tint = if (hasResults) PrimaryIndigo else TextMuted,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Copy Report",
-                        color = PrimaryIndigo,
-                        fontSize = 11.sp
+                        text = "Copy Sanitized Report",
+                        color = if (hasResults) PrimaryIndigo else TextMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Save to File button (SAF)
+                OutlinedButton(
+                    onClick = {
+                        val export = SanitizedReportExporter.generateSanitizedReport(
+                            results = results,
+                            totalRecordedCount = totalRecordedCount,
+                            maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+                            isSessionActive = isSessionActive
+                        )
+                        pendingExportText = export.reportText
+                        val timeStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                        createDocumentLauncher.launch("outloop_report_$timeStr.txt")
+                    },
+                    enabled = hasResults,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .weight(0.7f)
+                        .heightIn(min = 48.dp)
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Export Report to File",
+                        tint = if (hasResults) AccentEmerald else TextMuted,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Save",
+                        color = if (hasResults) AccentEmerald else TextMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
@@ -536,96 +659,66 @@ private fun ControlBar(
                                 statusMessage = "Copied tree dump (${export.eventCount} trees, ${export.formattedSize})"
                                 statusIsError = false
                             } catch (e: Exception) {
-                                statusMessage = "Clipboard error: ${e.message ?: "system rejected payload"}. Tap 'Save File'."
+                                statusMessage = "Clipboard error: ${e.message ?: "system rejected payload"}."
                                 statusIsError = true
                             }
                         }
                     },
+                    enabled = hasResults,
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Icon(
                         Icons.Default.Info,
                         contentDescription = "Copy Structural Tree Report",
-                        tint = PrimaryIndigo,
-                        modifier = Modifier.height(14.dp)
+                        tint = if (hasResults) PrimaryIndigo else TextMuted,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Copy Tree",
-                        color = PrimaryIndigo,
-                        fontSize = 11.sp
-                    )
-                }
-
-                // Save to File button (SAF)
-                OutlinedButton(
-                    onClick = {
-                        val export = SanitizedReportExporter.generateSanitizedReport(
-                            results = results,
-                            totalRecordedCount = totalRecordedCount,
-                            maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
-                            isSessionActive = isSessionActive
-                        )
-                        pendingExportText = export.reportText
-                        val timeStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-                        createDocumentLauncher.launch("outloop_report_$timeStr.txt")
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Export Report to File",
-                        tint = AccentEmerald,
-                        modifier = Modifier.height(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = "Save File",
-                        color = AccentEmerald,
-                        fontSize = 11.sp
+                        text = "Tree",
+                        color = if (hasResults) PrimaryIndigo else TextMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
-        }
 
-        // Status banner
-        if (statusMessage != null) {
-            Spacer(modifier = Modifier.height(6.dp))
-            Surface(
-                color = if (statusIsError) AccentAmber.copy(alpha = 0.15f) else AccentEmerald.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(6.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = statusMessage!!,
-                    color = if (statusIsError) AccentAmber else AccentEmerald,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                )
+            // Status feedback banner
+            if (statusMessage != null) {
+                Surface(
+                    color = if (statusIsError) AccentAmber.copy(alpha = 0.15f) else AccentEmerald.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = statusMessage!!,
+                        color = if (statusIsError) AccentAmber else AccentEmerald,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ResultsSection(
-    results: List<ClassificationResult>,
-    totalRecordedCount: Int = results.size,
-    isSessionActive: Boolean,
-    modifier: Modifier = Modifier
+private fun ResultsHeader(
+    resultsCount: Int,
+    totalRecordedCount: Int = resultsCount,
+    isSessionActive: Boolean
 ) {
-    val droppedCount = maxOf(0, totalRecordedCount - results.size)
-    Column(modifier = modifier.fillMaxWidth()) {
+    val droppedCount = maxOf(0, totalRecordedCount - resultsCount)
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Sanitized Detection Events (${results.size})",
+                text = "Sanitized Detection Events ($resultsCount)",
                 color = TextSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
@@ -648,26 +741,11 @@ private fun ResultsSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Capacity warning: Showing newest ${results.size} of $totalRecordedCount events ($droppedCount evicted). Complete export is available.",
+                    text = "Capacity warning: Showing newest $resultsCount of $totalRecordedCount events ($droppedCount evicted). Complete export is available.",
                     color = AccentAmber,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (results.isEmpty()) {
-            EmptyResultsView(isSessionActive)
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(results) { item ->
-                    ResultItemCard(item)
-                }
             }
         }
     }
@@ -690,7 +768,7 @@ private fun EmptyResultsView(isSessionActive: Boolean) {
                 text = if (isSessionActive)
                     "Session is active.\nOpen Instagram and navigate between tabs to capture layout events."
                 else
-                    "Diagnostics are stopped.\nTap 'Start Session' above to begin capturing sanitized detection events.",
+                    "Diagnostics are stopped.\nTap 'Start Diagnostic Session' above to begin capturing sanitized detection events.",
                 color = TextMuted,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,

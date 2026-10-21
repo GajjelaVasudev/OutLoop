@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="h-full dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_tab" name="shell-type"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #111318;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#111318",
+            "surface": "#111318",
+            "surface-dim": "#111318",
+            "surface-container-lowest": "#0c0e13",
+            "surface-container-low": "#1a1b21",
+            "surface-container": "#1A1D24",
+            "surface-container-high": "#222630",
+            "surface-container-highest": "#282a2f",
+            "surface-variant": "#33353a",
+            "surface-bright": "#37393f",
+            "outline": "#2D323E",
+            "outline-variant": "#434937",
+            "on-surface": "#F7F8F4",
+            "on-surface-variant": "#A0A5AA",
+            "on-surface-subtle": "#686D76",
+            "on-background": "#F7F8F4",
+            "primary": "#b9f45a",
+            "primary-container": "#b9f45a",
+            "on-primary": "#111318",
+            "on-primary-container": "#111318",
+            "primary-fixed": "#baf55b",
+            "primary-fixed-dim": "#9fd841",
+            "secondary": "#c3c6d3",
+            "secondary-container": "#222630",
+            "on-secondary": "#111318",
+            "on-secondary-container": "#c3c6d3",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "on-error": "#690005"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "margin": "1.25rem",
+            "gutter": "1rem"
+          },
+          fontFamily: {
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "title-lg": ["Plus Jakarta Sans"],
+            "title-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "body-sm": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "label-caps": ["Plus Jakarta Sans"]
+          },
+          fontSize: {
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "title-lg": ["18px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "600" }],
+            "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary selection:text-on-primary">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#111318]/90 backdrop-blur-xl border-b border-[#2D323E]/50">
+<div class="w-full pt-safe">
+<div class="flex items-center justify-between px-margin h-6 text-[#A0A5AA] font-label-md text-body-sm">
+<span class="tracking-tight font-medium">09:41</span>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[15px]">wifi</span>
+<span class="material-symbols-outlined text-[16px]">battery_full</span>
+</div>
+</div>
+</div>
+<div class="h-16 px-margin flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-[#111318]">
+<span class="material-symbols-outlined text-[22px]">all_inclusive</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md tracking-tight text-[#F7F8F4]">OutLoop</span>
+<span class="hidden">Dashboard</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<a class="w-11 h-11 rounded-full flex items-center justify-center text-[#A0A5AA] hover:text-[#F7F8F4] hover:bg-[#1A1D24] transition-colors" data-path="app-settings" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+</a>
+<div class="w-8 h-8 rounded-full bg-[#222630] border border-[#2D323E] flex items-center justify-center text-[#F7F8F4]">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col relative w-full pt-24 pb-24 px-margin bg-surface">
+<div class="flex flex-col w-full pb-6 space-y-5">
+<!-- Main Intent Headline -->
+<section class="flex flex-col space-y-1.5 pt-1">
+<div class="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-[#1A1D24] border border-[#2D323E] text-[#A0A5AA] font-label-caps text-label-caps tracking-wider uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          Phase 01 Diagnostic
+        </div>
+<h1 class="font-headline-lg text-headline-lg text-[#F7F8F4] tracking-tight">
+          Take back your attention.
+        </h1>
+<p class="font-body-md text-body-md text-[#A0A5AA] leading-relaxed">
+          We're testing a smarter way to avoid endless Reels without losing the connections that matter.
+        </p>
+</section>
+<!-- Primary Diagnostic Engine Card -->
+<section class="w-full rounded-2xl bg-[#1A1D24] border border-[#2D323E] p-5 shadow-lg space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#222630] border border-[#2D323E] flex items-center justify-center text-[#F7F8F4]">
+<span class="material-symbols-outlined text-[22px]">radar</span>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-[#F7F8F4] tracking-tight leading-tight">Instagram detection</h2>
+<span class="font-body-sm text-body-sm text-[#A0A5AA]">Real-time accessibility parser</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-label-md text-label-md font-semibold text-primary">Ready</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-[#A0A5AA] leading-relaxed">
+          Accessibility service active. Ready to run local structural classification when you launch Instagram.
+        </p>
+<div class="pt-1 flex flex-col gap-2.5">
+<button class="w-full h-12 rounded-xl bg-primary text-[#111318] font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-transform font-bold shadow-md shadow-primary/10" id="start-diagnostic-btn">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+<span>Start Diagnostic Session</span>
+</button>
+<div class="flex items-center justify-center gap-1.5 text-[#686D76]">
+<span class="material-symbols-outlined text-[15px]">info</span>
+<span class="font-body-sm text-body-sm">Detection experiment only. Instagram is not blocked.</span>
+</div>
+</div>
+</section>
+<!-- Live Results Link Row -->
+<section>
+<a class="w-full rounded-xl bg-[#1A1D24] border border-[#2D323E] p-4 flex items-center justify-between shadow-sm active:bg-[#222630] transition-colors" data-path="live-results" href="#">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-[#222630] border border-[#2D323E] flex items-center justify-center text-[#F7F8F4] flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">developer_board</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-[#F7F8F4] truncate">View Live Results</span>
+<span class="font-body-sm text-body-sm text-[#A0A5AA] truncate">Inspect sample classified interface nodes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#A0A5AA] text-[20px] ml-2 flex-shrink-0">arrow_forward</span>
+</a>
+</section>
+<!-- Intended Target Matrix -->
+<section class="space-y-2.5">
+<div>
+<h3 class="font-title-lg text-title-lg text-[#F7F8F4]">What stays accessible</h3>
+<p class="font-body-sm text-body-sm text-[#A0A5AA]">Intended product goals for selective focus</p>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- DM Card -->
+<div class="rounded-xl bg-[#1A1D24] border border-[#2D323E] p-3 flex items-center gap-2.5 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-[#222630] flex items-center justify-center text-[#F7F8F4] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">forum</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-[#F7F8F4] truncate">DMs</span>
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A0A5AA] block truncate">Direct Messages</span>
+</div>
+</div>
+<!-- Stories Card -->
+<div class="rounded-xl bg-[#1A1D24] border border-[#2D323E] p-3 flex items-center gap-2.5 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-[#222630] flex items-center justify-center text-[#F7F8F4] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">history_edu</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-[#F7F8F4] truncate">Stories</span>
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A0A5AA] block truncate">Friends updates</span>
+</div>
+</div>
+<!-- Profiles Card -->
+<div class="rounded-xl bg-[#1A1D24] border border-[#2D323E] p-3 flex items-center gap-2.5 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-[#222630] flex items-center justify-center text-[#F7F8F4] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">account_circle</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-[#F7F8F4] truncate">Profiles</span>
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A0A5AA] block truncate">User headers &amp; bio</span>
+</div>
+</div>
+<!-- Home feed Card -->
+<div class="rounded-xl bg-[#1A1D24] border border-[#2D323E] p-3 flex items-center gap-2.5 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-[#222630] flex items-center justify-center text-[#F7F8F4] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">dynamic_feed</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-[#F7F8F4] truncate">Home feed</span>
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A0A5AA] block truncate">Static picture posts</span>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-[#686D76] px-1 pt-0.5 leading-relaxed">
+          These are intended product goals, not a guarantee that detection or selective blocking already works.
+        </p>
+</section>
+<!-- Technical Privacy Guarantee Footer -->
+<section class="rounded-xl bg-[#1A1D24] border border-[#2D323E] p-3.5 flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-[#222630] border border-[#2D323E] flex items-center justify-center text-[#A0A5AA] flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[17px]">security</span>
+</div>
+<div class="space-y-0.5">
+<span class="font-label-md text-label-md text-[#F7F8F4] block">Zero-Cloud On-Device Sandbox</span>
+<p class="font-body-sm text-body-sm text-[#A0A5AA] leading-relaxed">
+            Local diagnostics only. You control when they run. Results never leave your device.
+          </p>
+</div>
+</section>
+</div>
+<script>
+      (function() {
+        const btn = document.getElementById('start-diagnostic-btn');
+        if (btn) {
+          btn.addEventListener('click', function() {
+            const textSpan = btn.querySelector('span:last-child');
+            const iconSpan = btn.querySelector('.material-symbols-outlined');
+            if (textSpan && iconSpan) {
+              iconSpan.textContent = 'check';
+              textSpan.textContent = 'Diagnostic Monitoring Active';
+              btn.classList.remove('bg-primary', 'text-[#111318]');
+              btn.classList.add('bg-[#222630]', 'text-[#F7F8F4]', 'border', 'border-[#2D323E]');
+              setTimeout(() => {
+                iconSpan.textContent = 'play_arrow';
+                textSpan.textContent = 'Start Diagnostic Session';
+                btn.classList.add('bg-primary', 'text-[#111318]');
+                btn.classList.remove('bg-[#222630]', 'text-[#F7F8F4]', 'border', 'border-[#2D323E]');
+              }, 3000);
+            }
+          });
+        }
+      })();
+    </script>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#111318]/90 backdrop-blur-xl border-t border-[#2D323E]/60">
+<div class="flex items-center justify-around h-16 max-w-md mx-auto px-space-md">
+<a aria-current="page" class="group flex flex-col items-center justify-center min-w-[56px] min-h-[44px] transition-colors text-[#F7F8F4]" data-path="dashboard" href="#">
+<div class="pill-indicator px-4 py-1 rounded-full transition-all flex items-center justify-center bg-primary text-[#111318]">
+<span class="material-symbols-outlined text-[22px]">grid_view</span>
+</div>
+<span class="font-label-caps text-label-caps mt-0.5 text-[#F7F8F4]">Focus</span>
+</a>
+<a class="group flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-[#A0A5AA] hover:text-[#F7F8F4] transition-colors" data-path="analytics" href="#">
+<div class="pill-indicator px-4 py-1 rounded-full transition-all flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">timeline</span>
+</div>
+<span class="font-label-caps text-label-caps mt-0.5">Trends</span>
+</a>
+<a class="group flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-[#A0A5AA] hover:text-[#F7F8F4] transition-colors" data-path="app-limits" href="#">
+<div class="pill-indicator px-4 py-1 rounded-full transition-all flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">block</span>
+</div>
+<span class="font-label-caps text-label-caps mt-0.5">Limits</span>
+</a>
+<a class="group flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-[#A0A5AA] hover:text-[#F7F8F4] transition-colors" data-path="mindful-sessions" href="#">
+<div class="pill-indicator px-4 py-1 rounded-full transition-all flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">spa</span>
+</div>
+<span class="font-label-caps text-label-caps mt-0.5">Breathing</span>
+</a>
+</div>
+<div class="flex justify-center pb-2">
+<div class="w-32 h-1 bg-[#F7F8F4]/20 rounded-full"></div>
+</div>
+</nav>
+</body></html>
