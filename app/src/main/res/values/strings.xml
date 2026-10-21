@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OutLoop</string>
+    <string name="app_tagline">Break the loop. Keep the connection.</string>
+    <string name="accessibility_service_label">OutLoop Reels Detection Prototype</string>
+    <string name="accessibility_service_description">Evaluates feasibility of identifying Instagram\'s dedicated Reels tab using sanitized structural layout signals. Does not read or store private messages, passwords, or personal content.</string>
+
+    <string name="diagnostic_experiment_title">Detection-Only Feasibility Prototype</string>
+    <string name="diagnostic_experiment_summary">OutLoop investigates whether Instagram\'s dedicated Reels tab can be reliably distinguished from DMs, Stories, profiles, and the ordinary home feed using native accessibility structure alone. This prototype only performs detection and does not block or modify Instagram.</string>
+
+    <string name="consent_dialog_title">Accessibility Permission Disclosure</string>
+    <string name="consent_dialog_body">OutLoop requires Android\'s Accessibility Service to observe window structure in Instagram.\n\n• What it inspects: Sanitized layout containers, tab bars, and widget types.\n• What it NEVER reads: Private message text, usernames, passwords, or personal details.\n• Zero Network Access: OutLoop requests NO internet permission; all analysis stays 100% on this device.\n• No Blocking: This prototype only tests detection accuracy.\n• Diagnostic Control: Inspection only occurs while a diagnostic session is explicitly running.\n\nYou can disable this permission at any time in Android Accessibility Settings.</string>
+    <string name="btn_open_settings">Open Accessibility Settings</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_start_session">Start Diagnostic Session</string>
+    <string name="btn_stop_session">Stop Diagnostic Session</string>
+    <string name="btn_clear_results">Clear Diagnostic Results</string>
+</resources>

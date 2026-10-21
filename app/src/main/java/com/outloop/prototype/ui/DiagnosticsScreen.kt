@@ -1,0 +1,616 @@
+package com.outloop.prototype.ui
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.outloop.classifier.CandidateScreenState
+import com.outloop.classifier.ClassificationResult
+import com.outloop.classifier.Confidence
+import com.outloop.prototype.R
+import com.outloop.prototype.ui.theme.AccentAmber
+import com.outloop.prototype.ui.theme.AccentEmerald
+import com.outloop.prototype.ui.theme.AccentRose
+import com.outloop.prototype.ui.theme.DarkBackground
+import com.outloop.prototype.ui.theme.PrimaryIndigo
+import com.outloop.prototype.ui.theme.StateDm
+import com.outloop.prototype.ui.theme.StateFeed
+import com.outloop.prototype.ui.theme.StateProfile
+import com.outloop.prototype.ui.theme.StateReels
+import com.outloop.prototype.ui.theme.StateStories
+import com.outloop.prototype.ui.theme.StateUnknown
+import com.outloop.prototype.ui.theme.StateVideo
+import com.outloop.prototype.ui.theme.SurfaceDark
+import com.outloop.prototype.ui.theme.SurfaceLightDark
+import com.outloop.prototype.ui.theme.TextMuted
+import com.outloop.prototype.ui.theme.TextPrimary
+import com.outloop.prototype.ui.theme.TextSecondary
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun DiagnosticsScreen(
+    isServiceEnabledInSettings: Boolean,
+    isServiceConnected: Boolean,
+    isSessionActive: Boolean,
+    diagnosticResults: List<ClassificationResult>,
+    onStartSession: () -> Unit,
+    onStopSession: () -> Unit,
+    onClearResults: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit
+) {
+    var showConsentDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        containerColor = DarkBackground
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Branding Header
+            HeaderSection()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Experiment Overview Card
+            ExperimentOverviewCard()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // System & Session Status Panel
+            StatusPanel(
+                isServiceEnabled = isServiceEnabledInSettings,
+                isServiceConnected = isServiceConnected,
+                isSessionActive = isSessionActive,
+                onRequestEnableService = { showConsentDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Control Actions
+            ControlBar(
+                isServiceConnected = isServiceConnected,
+                isSessionActive = isSessionActive,
+                hasResults = diagnosticResults.isNotEmpty(),
+                onStartSession = onStartSession,
+                onStopSession = onStopSession,
+                onClearResults = onClearResults
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Live Results List
+            ResultsSection(
+                results = diagnosticResults,
+                isSessionActive = isSessionActive,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
+    if (showConsentDialog) {
+        AccessibilityConsentDialog(
+            onConfirm = {
+                showConsentDialog = false
+                onOpenAccessibilitySettings()
+            },
+            onDismiss = { showConsentDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun HeaderSection() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(10.dp)
+                    .height(28.dp)
+                    .background(PrimaryIndigo, RoundedCornerShape(4.dp))
+            )
+            Text(
+                text = stringResource(id = R.string.app_name),
+                color = TextPrimary,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Surface(
+                color = SurfaceLightDark,
+                shape = RoundedCornerShape(6.dp)
+            ) {
+                Text(
+                    text = "PROTOTYPE",
+                    color = AccentEmerald,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+        Text(
+            text = stringResource(id = R.string.app_tagline),
+            color = TextSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(start = 18.dp, top = 2.dp)
+        )
+    }
+}
+
+@Composable
+private fun ExperimentOverviewCard() {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = PrimaryIndigo,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Column {
+                Text(
+                    text = stringResource(id = R.string.diagnostic_experiment_title),
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(id = R.string.diagnostic_experiment_summary),
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusPanel(
+    isServiceEnabled: Boolean,
+    isServiceConnected: Boolean,
+    isSessionActive: Boolean,
+    onRequestEnableService: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = "System Status",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            StatusRow(
+                label = "Android Settings Service",
+                statusText = if (isServiceEnabled) "Enabled" else "Disabled",
+                isPositive = isServiceEnabled
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            StatusRow(
+                label = "Accessibility Connection",
+                statusText = if (isServiceConnected) "Connected" else "Disconnected",
+                isPositive = isServiceConnected
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            StatusRow(
+                label = "Diagnostic Session",
+                statusText = if (isSessionActive) "RUNNING" else "STOPPED",
+                isPositive = isSessionActive,
+                highlight = true
+            )
+
+            // Warning if service disconnected
+            AnimatedVisibility(visible = !isServiceConnected) {
+                Column(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = AccentAmber,
+                            modifier = Modifier.height(16.dp)
+                        )
+                        Text(
+                            text = "Reliable detection is not active until service is enabled and connected.",
+                            color = AccentAmber,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onRequestEnableService,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "Configure in Android Settings", fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusRow(
+    label: String,
+    statusText: String,
+    isPositive: Boolean,
+    highlight: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, color = TextPrimary, fontSize = 13.sp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(8.dp)
+                    .height(8.dp)
+                    .background(
+                        if (isPositive) AccentEmerald else if (highlight) AccentAmber else AccentRose,
+                        CircleShape
+                    )
+            )
+            Text(
+                text = statusText,
+                color = if (isPositive) AccentEmerald else if (highlight) AccentAmber else AccentRose,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun ControlBar(
+    isServiceConnected: Boolean,
+    isSessionActive: Boolean,
+    hasResults: Boolean,
+    onStartSession: () -> Unit,
+    onStopSession: () -> Unit,
+    onClearResults: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (!isSessionActive) {
+            Button(
+                onClick = onStartSession,
+                enabled = isServiceConnected,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = "Start Session", fontSize = 13.sp)
+            }
+        } else {
+            Button(
+                onClick = onStopSession,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Stop, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = "Stop Session", fontSize = 13.sp)
+            }
+        }
+
+        OutlinedButton(
+            onClick = onClearResults,
+            enabled = hasResults,
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = null)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "Clear", fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun ResultsSection(
+    results: List<ClassificationResult>,
+    isSessionActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Sanitized Detection Events (${results.size})",
+                color = TextSecondary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (isSessionActive) {
+                Text(
+                    text = "● Live Recording",
+                    color = AccentEmerald,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (results.isEmpty()) {
+            EmptyResultsView(isSessionActive)
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(results) { item ->
+                    ResultItemCard(item)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyResultsView(isSessionActive: Boolean) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = if (isSessionActive)
+                    "Session is active.\nOpen Instagram and navigate between tabs to capture layout events."
+                else
+                    "Diagnostics are stopped.\nTap 'Start Session' above to begin capturing sanitized detection events.",
+                color = TextMuted,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResultItemCard(result: ClassificationResult) {
+    val stateColor = when (result.candidateState) {
+        CandidateScreenState.REELS_TAB -> StateReels
+        CandidateScreenState.DM_INBOX, CandidateScreenState.DM_CONVERSATION -> StateDm
+        CandidateScreenState.STORIES -> StateStories
+        CandidateScreenState.HOME_FEED -> StateFeed
+        CandidateScreenState.PROFILE -> StateProfile
+        CandidateScreenState.FULL_SCREEN_VIDEO -> StateVideo
+        CandidateScreenState.UNKNOWN -> StateUnknown
+    }
+
+    val timeFormatter = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
+    val formattedTime = remember(result.timestamp) { timeFormatter.format(Date(result.timestamp)) }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // State Badge
+                Surface(
+                    color = stateColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = result.candidateState.displayName,
+                        color = stateColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+
+                Text(
+                    text = formattedTime,
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Reason and Confidence Tags
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = SurfaceLightDark,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = result.reasonCode.name,
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                val confColor = when (result.confidence) {
+                    Confidence.HIGH -> AccentEmerald
+                    Confidence.MEDIUM -> AccentAmber
+                    Confidence.LOW -> TextMuted
+                }
+                Surface(
+                    color = confColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = result.confidence.label,
+                        color = confColor,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Surface(
+                    color = if (result.isDeviceVerified) AccentEmerald.copy(alpha = 0.15f) else SurfaceLightDark,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = if (result.isDeviceVerified) "Device-Verified" else "Synthetic / Unverified",
+                        color = if (result.isDeviceVerified) AccentEmerald else TextMuted,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Sanitized Explanation
+            Text(
+                text = result.evidenceExplanation,
+                color = TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccessibilityConsentDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryIndigo)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.consent_dialog_title), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Text(
+                text = stringResource(id = R.string.consent_dialog_body),
+                color = TextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+            ) {
+                Text(text = stringResource(id = R.string.btn_open_settings))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.btn_cancel), color = TextMuted)
+            }
+        },
+        containerColor = SurfaceDark,
+        shape = RoundedCornerShape(14.dp)
+    )
+}

@@ -1,0 +1,1 @@
+# OutLoop Prototype Proguard Rules
