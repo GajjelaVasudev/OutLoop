@@ -318,4 +318,135 @@ class ScreenClassifierTest {
         assertEquals(Confidence.LOW, result.confidence)
         assertEquals(ReasonCode.APP_NOT_FOREGROUND, result.reasonCode)
     }
+
+    // 15. Profile-like header coexisting with vertical pager returns CONFLICTING_SIGNALS
+    @Test
+    fun testProfileHeaderWithVerticalPagerReturnsConflictingSignals() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 45,
+            hasBottomNavigationBar = true,
+            hasVerticalPager = true, // Reels/video indicator
+            hasProfileHeader = true  // Profile indicator
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        assertEquals(CandidateScreenState.UNKNOWN, result.candidateState)
+        assertEquals(Confidence.LOW, result.confidence)
+        assertEquals(ReasonCode.CONFLICTING_SIGNALS, result.reasonCode)
+        assertFalse(result.candidateState == CandidateScreenState.PROFILE)
+    }
+
+    // 16. Profile-like header coexisting with horizontal stories tray returns CONFLICTING_SIGNALS
+    @Test
+    fun testProfileHeaderWithHorizontalStoryListReturnsConflictingSignals() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 50,
+            hasBottomNavigationBar = true,
+            hasHorizontalStoryList = true, // Home feed indicator
+            hasProfileHeader = true       // Profile indicator
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        assertEquals(CandidateScreenState.UNKNOWN, result.candidateState)
+        assertEquals(Confidence.LOW, result.confidence)
+        assertEquals(ReasonCode.CONFLICTING_SIGNALS, result.reasonCode)
+        assertFalse(result.candidateState == CandidateScreenState.PROFILE)
+    }
+
+    // 17. Profile header with Home tab ordinal (0) returns CONFLICTING_SIGNALS
+    @Test
+    fun testProfileHeaderWithHomeTabOrdinalReturnsConflictingSignals() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 45,
+            hasBottomNavigationBar = true,
+            selectedBottomTabOrdinal = 0, // Home tab selected
+            hasProfileHeader = true       // Contradicts home tab
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        assertEquals(CandidateScreenState.UNKNOWN, result.candidateState)
+        assertEquals(Confidence.LOW, result.confidence)
+        assertEquals(ReasonCode.CONFLICTING_SIGNALS, result.reasonCode)
+    }
+
+    // 18. Profile header with unconfirmed tab ordinal returns INSUFFICIENT_EVIDENCE
+    @Test
+    fun testProfileHeaderWithUndeterminedTabOrdinalReturnsInsufficientEvidence() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 45,
+            hasBottomNavigationBar = true,
+            selectedBottomTabOrdinal = null, // Undetermined tab ordinal
+            hasProfileHeader = true,
+            hasVerticalPager = false,
+            hasHorizontalStoryList = false
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        // Must NOT return PROFILE with MEDIUM confidence when tab confirmation is missing
+        assertEquals(CandidateScreenState.UNKNOWN, result.candidateState)
+        assertEquals(Confidence.LOW, result.confidence)
+        assertEquals(ReasonCode.INSUFFICIENT_EVIDENCE, result.reasonCode)
+    }
+
+    // 19. Dedicated Reels tab with null tab ordinal still classifies as REELS_TAB via vertical pager + bottom nav
+    @Test
+    fun testDedicatedReelsTabWithNullTabOrdinalClassifiesAsReelsTab() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 40,
+            hasBottomNavigationBar = true,
+            selectedBottomTabOrdinal = null, // Tab ordinal not resolved by accessibility
+            hasVerticalPager = true,
+            hasHorizontalStoryList = false,
+            hasProfileHeader = false,
+            hasChatInputBar = false
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        assertEquals(CandidateScreenState.REELS_TAB, result.candidateState)
+        assertEquals(Confidence.MEDIUM, result.confidence)
+        assertEquals(ReasonCode.MULTIPLE_SIGNALS_MATCH, result.reasonCode)
+    }
+
+    // 20. Home feed with null tab ordinal still classifies as HOME_FEED via horizontal stories tray + bottom nav
+    @Test
+    fun testHomeFeedWithNullTabOrdinalClassifiesAsHomeFeed() {
+        val syntheticSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 40,
+            hasBottomNavigationBar = true,
+            selectedBottomTabOrdinal = null, // Tab ordinal not resolved
+            hasHorizontalStoryList = true,
+            hasVerticalPager = false,
+            hasProfileHeader = false,
+            hasChatInputBar = false
+        )
+
+        val result = classifier.classify(syntheticSnapshot)
+
+        assertEquals(CandidateScreenState.HOME_FEED, result.candidateState)
+        assertEquals(Confidence.MEDIUM, result.confidence)
+        assertEquals(ReasonCode.MULTIPLE_SIGNALS_MATCH, result.reasonCode)
+    }
 }

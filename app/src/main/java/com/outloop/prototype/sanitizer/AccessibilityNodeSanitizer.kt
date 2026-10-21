@@ -87,13 +87,16 @@ object AccessibilityNodeSanitizer {
                 hasBottomNav = true
                 hints.add("BOTTOM_NAV_${childCount}_ITEMS")
 
-                // Check which tab child is selected/focused
+                // Check which tab child (or direct descendant) is selected/focused
                 for (i in 0 until childCount) {
-                    val child = node.getChild(i)
-                    if (child != null) {
-                        if (child.isSelected || child.isFocused) {
+                    val child = node.getChild(i) ?: continue
+                    try {
+                        if (isTabSelected(child)) {
                             selectedTabOrdinal = i
                         }
+                    } finally {
+                        @Suppress("DEPRECATION")
+                        child.recycle()
                     }
                 }
             }
@@ -117,8 +120,10 @@ object AccessibilityNodeSanitizer {
                 hints.add("HORIZONTAL_STORY_TRAY")
             }
 
-            // Detect top action / app bar
-            if (isNearTop && simpleClass in listOf("Toolbar", "ActionBar", "ViewGroup") && nodeBounds.height() in 40..250) {
+            // Detect top action / app bar (compact bar at extreme top of display)
+            val isAtExtremeTop = displayHeightPixels > 0 && nodeBounds.top <= (displayHeightPixels * 0.08).toInt()
+            val isCompactBarHeight = displayHeightPixels > 0 && nodeBounds.height() <= (displayHeightPixels * 0.12).toInt()
+            if (isAtExtremeTop && isCompactBarHeight && simpleClass in listOf("Toolbar", "ActionBar", "ViewGroup", "LinearLayout")) {
                 hasTopAppBar = true
             }
 
@@ -144,12 +149,16 @@ object AccessibilityNodeSanitizer {
             }
 
             // Detect profile header layout
-            if (isNearTop && (childCount >= 3) && simpleClass in listOf("ViewGroup", "LinearLayout", "ConstraintLayout")) {
-                // If there's an avatar and multiple stat counters in upper third
-                if (nodeBounds.bottom <= (displayHeightPixels * 0.45).toInt()) {
-                    hasProfileHeaderStructure = true
-                    hints.add("PROFILE_HEADER_STRUCTURE")
-                }
+            // Must be located below the top action bar, occupy substantial vertical height (>= 12% of display),
+            // and reside in the upper half of the display. A compact 56dp action bar is NEVER a profile header.
+            val isBelowTopBar = displayHeightPixels > 0 && nodeBounds.top >= (displayHeightPixels * 0.04).toInt()
+            val isSubstantialHeaderHeight = displayHeightPixels > 0 && nodeBounds.height() >= (displayHeightPixels * 0.12).toInt()
+            val isInUpperHalf = displayHeightPixels > 0 && nodeBounds.bottom <= (displayHeightPixels * 0.55).toInt()
+
+            if (isBelowTopBar && isSubstantialHeaderHeight && isInUpperHalf && childCount >= 3 &&
+                simpleClass in listOf("ViewGroup", "LinearLayout", "ConstraintLayout")) {
+                hasProfileHeaderStructure = true
+                hints.add("PROFILE_HEADER_STRUCTURE")
             }
 
             // Traverse children up to MAX_DEPTH and MAX_NODE_COUNT
@@ -182,5 +191,19 @@ object AccessibilityNodeSanitizer {
             hasProfileHeader = hasProfileHeaderStructure,
             detectedStructuralHints = hints
         )
+    }
+
+    private fun isTabSelected(tabNode: AccessibilityNodeInfo): Boolean {
+        if (tabNode.isSelected || tabNode.isFocused) return true
+        for (j in 0 until tabNode.childCount) {
+            val subChild = tabNode.getChild(j) ?: continue
+            try {
+                if (subChild.isSelected || subChild.isFocused) return true
+            } finally {
+                @Suppress("DEPRECATION")
+                subChild.recycle()
+            }
+        }
+        return false
     }
 }
