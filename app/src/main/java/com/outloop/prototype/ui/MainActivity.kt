@@ -29,12 +29,14 @@ class MainActivity : ComponentActivity() {
                 val isServiceConnected by DiagnosticSessionRepository.isServiceConnected.collectAsState()
                 val isSessionActive by DiagnosticSessionRepository.isSessionActive.collectAsState()
                 val diagnosticResults by DiagnosticSessionRepository.diagnosticResults.collectAsState()
+                val totalRecordedCount by DiagnosticSessionRepository.totalRecordedCount.collectAsState()
 
                 DiagnosticsScreen(
                     isServiceEnabledInSettings = isServiceEnabledInSettings,
                     isServiceConnected = isServiceConnected,
                     isSessionActive = isSessionActive,
                     diagnosticResults = diagnosticResults,
+                    totalRecordedCount = totalRecordedCount,
                     onStartSession = { DiagnosticSessionRepository.startSession() },
                     onStopSession = { DiagnosticSessionRepository.stopSession() },
                     onClearResults = { DiagnosticSessionRepository.clearResults() },

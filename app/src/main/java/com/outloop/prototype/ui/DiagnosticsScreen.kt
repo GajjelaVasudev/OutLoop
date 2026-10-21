@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -44,7 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +59,8 @@ import com.outloop.classifier.CandidateScreenState
 import com.outloop.classifier.ClassificationResult
 import com.outloop.classifier.Confidence
 import com.outloop.prototype.R
+import com.outloop.prototype.reporting.SanitizedReportExporter
+import com.outloop.prototype.repository.DiagnosticSessionRepository
 import com.outloop.prototype.ui.theme.AccentAmber
 import com.outloop.prototype.ui.theme.AccentEmerald
 import com.outloop.prototype.ui.theme.AccentRose
@@ -80,6 +88,7 @@ fun DiagnosticsScreen(
     isServiceConnected: Boolean,
     isSessionActive: Boolean,
     diagnosticResults: List<ClassificationResult>,
+    totalRecordedCount: Int = diagnosticResults.size,
     onStartSession: () -> Unit,
     onStopSession: () -> Unit,
     onClearResults: () -> Unit,
@@ -123,6 +132,8 @@ fun DiagnosticsScreen(
                 isServiceConnected = isServiceConnected,
                 isSessionActive = isSessionActive,
                 hasResults = diagnosticResults.isNotEmpty(),
+                results = diagnosticResults,
+                totalRecordedCount = totalRecordedCount,
                 onStartSession = onStartSession,
                 onStopSession = onStopSession,
                 onClearResults = onClearResults
@@ -133,6 +144,7 @@ fun DiagnosticsScreen(
             // Live Results List
             ResultsSection(
                 results = diagnosticResults,
+                totalRecordedCount = totalRecordedCount,
                 isSessionActive = isSessionActive,
                 modifier = Modifier.weight(1f)
             )
@@ -344,52 +356,256 @@ private fun StatusRow(
     }
 }
 
+private fun generateSanitizedReport(
+    results: List<ClassificationResult>,
+    totalRecordedCount: Int = results.size,
+    isSessionActive: Boolean = false
+): String {
+    return SanitizedReportExporter.generateSanitizedReport(
+        results = results,
+        totalRecordedCount = totalRecordedCount,
+        maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+        isSessionActive = isSessionActive
+    ).reportText
+}
+
+private fun generateStructuralTreeReport(
+    results: List<ClassificationResult>,
+    totalRecordedCount: Int = results.size,
+    isSessionActive: Boolean = false
+): String {
+    return SanitizedReportExporter.generateStructuralTreeReport(
+        results = results,
+        totalRecordedCount = totalRecordedCount,
+        maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+        isSessionActive = isSessionActive
+    ).reportText
+}
+
 @Composable
 private fun ControlBar(
     isServiceConnected: Boolean,
     isSessionActive: Boolean,
     hasResults: Boolean,
+    results: List<ClassificationResult> = emptyList(),
+    totalRecordedCount: Int = results.size,
     onStartSession: () -> Unit,
     onStopSession: () -> Unit,
     onClearResults: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        if (!isSessionActive) {
-            Button(
-                onClick = onStartSession,
-                enabled = isServiceConnected,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "Start Session", fontSize = 13.sp)
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var statusMessage by remember { mutableStateOf<String?>(null) }
+    var statusIsError by remember { mutableStateOf(false) }
+    var pendingExportText by remember { mutableStateOf<String?>(null) }
+
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        if (uri != null && pendingExportText != null) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { stream ->
+                    stream.write(pendingExportText!!.toByteArray(Charsets.UTF_8))
+                }
+                val byteCount = pendingExportText!!.toByteArray(Charsets.UTF_8).size
+                val sizeKb = String.format(Locale.US, "%.1f KB", byteCount / 1024.0)
+                statusMessage = "Report saved to file ($sizeKb)"
+                statusIsError = false
+            } catch (e: Exception) {
+                statusMessage = "Failed to save file: ${e.message ?: "write error"}"
+                statusIsError = true
             }
-        } else {
-            Button(
-                onClick = onStopSession,
-                colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Stop, contentDescription = null)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "Stop Session", fontSize = 13.sp)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (!isSessionActive) {
+                Button(
+                    onClick = {
+                        statusMessage = null
+                        onStartSession()
+                    },
+                    enabled = isServiceConnected,
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "Start Session", fontSize = 12.sp)
+                }
+            } else {
+                Button(
+                    onClick = {
+                        statusMessage = null
+                        onStopSession()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Stop, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "Stop Session", fontSize = 12.sp)
+                }
+            }
+
+            if (hasResults) {
+                OutlinedButton(
+                    onClick = {
+                        statusMessage = null
+                        onClearResults()
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(text = "Clear", fontSize = 11.sp)
+                }
             }
         }
 
-        OutlinedButton(
-            onClick = onClearResults,
-            enabled = hasResults,
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Icon(Icons.Default.Delete, contentDescription = null)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(text = "Clear", fontSize = 13.sp)
+        if (hasResults) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Copy Sanitized Report button
+                OutlinedButton(
+                    onClick = {
+                        val export = SanitizedReportExporter.generateSanitizedReport(
+                            results = results,
+                            totalRecordedCount = totalRecordedCount,
+                            maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+                            isSessionActive = isSessionActive
+                        )
+                        if (export.sizeBytes > SanitizedReportExporter.SAFE_CLIPBOARD_BYTE_LIMIT) {
+                            statusMessage = "Report is ${export.formattedSize} (too large for clipboard). Tap 'Save File' below."
+                            statusIsError = true
+                        } else {
+                            try {
+                                clipboardManager.setText(AnnotatedString(export.reportText))
+                                statusMessage = "Copied report (${export.eventCount} events, ${export.formattedSize})"
+                                statusIsError = false
+                            } catch (e: Exception) {
+                                statusMessage = "Clipboard error: ${e.message ?: "system rejected payload"}. Tap 'Save File'."
+                                statusIsError = true
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1.1f)
+                ) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = "Copy Sanitized Report",
+                        tint = PrimaryIndigo,
+                        modifier = Modifier.height(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "Copy Report",
+                        color = PrimaryIndigo,
+                        fontSize = 11.sp
+                    )
+                }
+
+                // Copy Tree Dump button
+                OutlinedButton(
+                    onClick = {
+                        val export = SanitizedReportExporter.generateStructuralTreeReport(
+                            results = results,
+                            totalRecordedCount = totalRecordedCount,
+                            maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+                            isSessionActive = isSessionActive
+                        )
+                        if (export.eventCount == 0) {
+                            statusMessage = "No tree dumps recorded in this session."
+                            statusIsError = true
+                        } else if (export.sizeBytes > SanitizedReportExporter.SAFE_CLIPBOARD_BYTE_LIMIT) {
+                            statusMessage = "Tree dump (${export.formattedSize}) exceeds clipboard. Tap 'Save File'."
+                            statusIsError = true
+                        } else {
+                            try {
+                                clipboardManager.setText(AnnotatedString(export.reportText))
+                                statusMessage = "Copied tree dump (${export.eventCount} trees, ${export.formattedSize})"
+                                statusIsError = false
+                            } catch (e: Exception) {
+                                statusMessage = "Clipboard error: ${e.message ?: "system rejected payload"}. Tap 'Save File'."
+                                statusIsError = true
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = "Copy Structural Tree Report",
+                        tint = PrimaryIndigo,
+                        modifier = Modifier.height(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "Copy Tree",
+                        color = PrimaryIndigo,
+                        fontSize = 11.sp
+                    )
+                }
+
+                // Save to File button (SAF)
+                OutlinedButton(
+                    onClick = {
+                        val export = SanitizedReportExporter.generateSanitizedReport(
+                            results = results,
+                            totalRecordedCount = totalRecordedCount,
+                            maxCapacity = DiagnosticSessionRepository.MAX_STORED_RESULTS,
+                            isSessionActive = isSessionActive
+                        )
+                        pendingExportText = export.reportText
+                        val timeStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                        createDocumentLauncher.launch("outloop_report_$timeStr.txt")
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Export Report to File",
+                        tint = AccentEmerald,
+                        modifier = Modifier.height(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "Save File",
+                        color = AccentEmerald,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+
+        // Status banner
+        if (statusMessage != null) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Surface(
+                color = if (statusIsError) AccentAmber.copy(alpha = 0.15f) else AccentEmerald.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = statusMessage!!,
+                    color = if (statusIsError) AccentAmber else AccentEmerald,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+            }
         }
     }
 }
@@ -397,9 +613,11 @@ private fun ControlBar(
 @Composable
 private fun ResultsSection(
     results: List<ClassificationResult>,
+    totalRecordedCount: Int = results.size,
     isSessionActive: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val droppedCount = maxOf(0, totalRecordedCount - results.size)
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -418,6 +636,22 @@ private fun ResultsSection(
                     color = AccentEmerald,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        if (droppedCount > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                color = AccentAmber.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Capacity warning: Showing newest ${results.size} of $totalRecordedCount events ($droppedCount evicted). Complete export is available.",
+                    color = AccentAmber,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
         }
@@ -571,6 +805,109 @@ private fun ResultItemCard(result: ClassificationResult) {
                 fontSize = 12.sp,
                 lineHeight = 16.sp
             )
+
+            // Privacy-Safe Structural Diagnostic Summary
+            result.diagnosticSummary?.let { diag ->
+                Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = SurfaceLightDark.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = diag.eventType ?: "UNKNOWN_EVENT",
+                                    color = PrimaryIndigo,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Nodes: ${diag.nodesVisited} | Depth: ${diag.maxDepthReached}",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Outcome: ${diag.observationOutcome.name}",
+                                    color = when (diag.observationOutcome) {
+                                        com.outloop.classifier.ObservationOutcome.CLASSIFIED -> AccentEmerald
+                                        com.outloop.classifier.ObservationOutcome.PARTIAL_OR_TRUNCATED -> AccentAmber
+                                        com.outloop.classifier.ObservationOutcome.ROOT_UNAVAILABLE -> AccentRose
+                                        com.outloop.classifier.ObservationOutcome.NO_MATCHING_SIGNALS -> TextMuted
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Root: ${diag.rootAcquisitionMethod}",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            if (diag.isPartialTree) {
+                                Text(
+                                    text = "⚠ Partial event-source subtree (window root was unavailable)",
+                                    color = AccentAmber,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            if (diag.reachedNodeLimit || diag.reachedDepthLimit) {
+                                Text(
+                                    text = "⚠ Traversal limit reached: ${if (diag.reachedNodeLimit) "node limit (250)" else "depth limit (14)"}",
+                                    color = AccentAmber,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            val navDesc = if (diag.bottomNavObservable) {
+                                val sel = diag.selectedBottomTabOrdinal?.let { "Tab #$it" } ?: "No tab selected"
+                                "Observed (${diag.bottomNavChildCount ?: "?"} tabs, $sel)"
+                            } else {
+                                "Not observed"
+                            }
+                            Text(
+                                text = "Bottom Nav: $navDesc",
+                                color = if (diag.bottomNavObservable) AccentEmerald else TextMuted,
+                                fontSize = 10.sp
+                            )
+
+                            if (diag.activeStructuralSignals.isNotEmpty()) {
+                                Text(
+                                    text = "Signals: ${diag.activeStructuralSignals.joinToString(", ")}",
+                                    color = TextSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            if (diag.observedClassCounts.isNotEmpty()) {
+                                val topClasses = diag.observedClassCounts.entries
+                                    .sortedByDescending { it.value }
+                                    .take(4)
+                                    .joinToString(", ") { "${it.key}: ${it.value}" }
+                                Text(
+                                    text = "Classes: $topClasses",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+
+            }
         }
     }
 }

@@ -51,41 +51,148 @@ class OutLoopAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 3. Throttle repeated hierarchy scans
+        val eventTypeString = try {
+            AccessibilityEvent.eventTypeToString(event.eventType)
+        } catch (_: Exception) {
+            "EVENT_${event.eventType}"
+        }
+        val isWindowStateChanged = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+
+        // 3. Throttle repeated content scans, but never drop window state transitions or retries after null root
         val now = SystemClock.uptimeMillis()
-        if (now - lastInspectionUptimeMs < INSPECTION_THROTTLE_MS) {
+        if (!isWindowStateChanged && (now - lastInspectionUptimeMs < INSPECTION_THROTTLE_MS)) {
             return
         }
-        lastInspectionUptimeMs = now
 
-        // 4. Retrieve active window root node safely
+        // 4. Retrieve root node safely:
+        // Attempt 1: rootInActiveWindow
+        // Attempt 2: interactive windows list (windows property)
+        // Attempt 3: event.source fallback
         var rootNode: AccessibilityNodeInfo? = null
+        var isPartialTree = false
+        var rootAcquisitionMethod = "NONE"
+
+        var externalActivePackage: String? = null
         try {
-            rootNode = rootInActiveWindow
+            // Attempt 1: rootInActiveWindow
+            val activeWindowRoot = rootInActiveWindow
+            if (activeWindowRoot != null) {
+                val pkg = activeWindowRoot.packageName?.toString()
+                if (pkg == TARGET_PACKAGE) {
+                    rootNode = activeWindowRoot
+                    isPartialTree = false
+                    rootAcquisitionMethod = "ROOT_IN_ACTIVE_WINDOW"
+                } else {
+                    externalActivePackage = pkg
+                    // Active window belongs to keyboard (IME), system UI, or external package (e.g. OutLoop when user switches back)
+                    @Suppress("DEPRECATION")
+                    activeWindowRoot.recycle()
+                }
+            }
+
+            // Attempt 2: If rootInActiveWindow was null or not target package, inspect interactive windows
+            if (rootNode == null) {
+                val interactiveWindows = try { windows } catch (_: Exception) { null }
+                if (!interactiveWindows.isNullOrEmpty()) {
+                    for (windowInfo in interactiveWindows) {
+                        val windowRoot = try { windowInfo.root } catch (_: Exception) { null } ?: continue
+                        if (windowRoot.packageName?.toString() == TARGET_PACKAGE) {
+                            rootNode = windowRoot
+                            isPartialTree = false
+                            rootAcquisitionMethod = "INTERACTIVE_WINDOW_ROOT"
+                            break
+                        } else {
+                            @Suppress("DEPRECATION")
+                            windowRoot.recycle()
+                        }
+                    }
+                }
+            }
+
+            // Attempt 3: If active window root and interactive windows were null or external,
+            // safely evaluate event.source and verify target package
+            if (rootNode == null) {
+                val sourceNode = try { event.source } catch (_: Exception) { null }
+                if (sourceNode != null) {
+                    if (sourceNode.packageName?.toString() == TARGET_PACKAGE) {
+                        var highestNode: AccessibilityNodeInfo = sourceNode
+                        while (true) {
+                            val parent = highestNode.parent ?: break
+                            if (highestNode !== sourceNode) {
+                                @Suppress("DEPRECATION")
+                                highestNode.recycle()
+                            }
+                            highestNode = parent
+                        }
+                        rootNode = highestNode
+
+                        val displayMetrics = Resources.getSystem().displayMetrics
+                        val nodeBounds = android.graphics.Rect()
+                        rootNode.getBoundsInScreen(nodeBounds)
+                        val isWindowRoot = (nodeBounds.width() >= displayMetrics.widthPixels * 0.9 &&
+                            nodeBounds.height() >= displayMetrics.heightPixels * 0.7) ||
+                            rootNode.className?.toString()?.contains("DecorView") == true
+
+                        isPartialTree = !isWindowRoot
+                        rootAcquisitionMethod = if (isPartialTree) "EVENT_SOURCE_SUBTREE" else "EVENT_SOURCE_WINDOW_ROOT"
+                    } else {
+                        @Suppress("DEPRECATION")
+                        sourceNode.recycle()
+                    }
+                }
+            }
 
             if (rootNode == null) {
+                val explanation = if (externalActivePackage != null) {
+                    "No accessibility root: active window belongs to '$externalActivePackage' (Instagram in background or transitioning, event: $eventTypeString)."
+                } else {
+                    "No accessibility root available for Instagram window ($eventTypeString)."
+                }
+                // Do not update lastInspectionUptimeMs on null root so subsequent settled events are not throttled
                 DiagnosticSessionRepository.recordResult(
                     ClassificationResult(
                         candidateState = CandidateScreenState.UNKNOWN,
                         confidence = Confidence.LOW,
                         reasonCode = ReasonCode.MISSING_ROOT,
                         timestamp = System.currentTimeMillis(),
-                        evidenceExplanation = "System returned null root node for Instagram window.",
-                        isDeviceVerified = false
+                        evidenceExplanation = explanation,
+                        isDeviceVerified = false,
+                        diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
+                            eventType = eventTypeString,
+                            isInstagramPackage = true,
+                            hasRootNode = false,
+                            nodesVisited = 0,
+                            observationOutcome = com.outloop.classifier.ObservationOutcome.ROOT_UNAVAILABLE,
+                            rootAcquisitionMethod = "NONE"
+                        )
                     )
                 )
                 return
             }
 
+            // Successfully obtained a root node: update throttle timestamp
+            lastInspectionUptimeMs = now
+
             // 5. Sanitize structural metadata without reading text or content descriptions
-            val displayHeight = Resources.getSystem().displayMetrics.heightPixels
-            val snapshot = AccessibilityNodeSanitizer.sanitize(rootNode, displayHeight)
+            val displayMetrics = Resources.getSystem().displayMetrics
+            val displayHeight = displayMetrics.heightPixels
+            val displayWidth = displayMetrics.widthPixels
+            val snapshot = AccessibilityNodeSanitizer.sanitize(
+                rootNode = rootNode,
+                displayHeightPixels = displayHeight,
+                displayWidthPixels = displayWidth,
+                eventType = eventTypeString,
+                isPartialTree = isPartialTree,
+                rootAcquisitionMethod = rootAcquisitionMethod,
+                captureTreeDump = DiagnosticSessionRepository.isDetailedTreeDumpEnabled.value
+            )
 
             // 6. Classify sanitized structure
             val result = classifier.classify(snapshot)
 
             // 7. Record result in local diagnostic session
             DiagnosticSessionRepository.recordResult(result)
+
 
         } catch (e: Exception) {
             // Graceful exception handling: record diagnostic error without crashing or leaking state
@@ -96,7 +203,13 @@ class OutLoopAccessibilityService : AccessibilityService() {
                     reasonCode = ReasonCode.UNSUPPORTED_STRUCTURE,
                     timestamp = System.currentTimeMillis(),
                     evidenceExplanation = "Exception during hierarchy inspection: ${e.javaClass.simpleName}",
-                    isDeviceVerified = false
+                    isDeviceVerified = false,
+                    diagnosticSummary = com.outloop.classifier.DiagnosticSummary(
+                        eventType = eventTypeString,
+                        isInstagramPackage = true,
+                        hasRootNode = rootNode != null,
+                        nodesVisited = 0
+                    )
                 )
             )
         } finally {

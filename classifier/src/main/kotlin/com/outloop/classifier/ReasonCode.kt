@@ -29,5 +29,9 @@ enum class ReasonCode(val description: String) {
     CONFLICTING_SIGNALS("Conflicting structural signals detected"),
 
     /** Insufficient structural nodes or depth to make a reliable determination. */
-    INSUFFICIENT_EVIDENCE("Insufficient structural evidence")
+    INSUFFICIENT_EVIDENCE("Insufficient structural evidence"),
+
+    /** Hierarchy traversal limit reached before complete structure could be observed. */
+    TRUNCATED_TRAVERSAL("Hierarchy traversal limit reached before complete structure could be observed")
 }
+

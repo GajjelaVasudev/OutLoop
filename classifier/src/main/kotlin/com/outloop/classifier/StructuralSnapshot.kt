@@ -41,11 +41,30 @@ data class StructuralSnapshot(
      */
     val selectedBottomTabOrdinal: Int? = null,
 
-    /** True if a full-screen vertical pagination container (e.g. ViewPager2) was detected. */
+    /** Resource ID entry name of the selected tab if identifiable (e.g. "feed_tab", "clips_tab", "profile_tab"). */
+    val selectedTabId: String? = null,
+
+    /** True if standard feed post action controls (like, comment, save, media group) were detected. */
+    val hasFeedPostControls: Boolean = false,
+
+    /** True if a full-screen vertical pagination container (e.g. ViewPager2 with vertical paging) was detected. */
     val hasVerticalPager: Boolean = false,
+
+    /** True if a horizontal pagination container (e.g. standard ViewPager for Camera-Feed-DM) was detected. */
+    val hasHorizontalPager: Boolean = false,
+
+    /** True if a pager container was detected but its scroll orientation could not be reliably established. */
+    val hasUnknownOrientationPager: Boolean = false,
+
+    /** True if the inspected tree is a partial event-source subtree rather than a verified window root. */
+    val isPartialTree: Boolean = false,
+
+    /** Mechanism by which the root node was acquired ("ROOT_IN_ACTIVE_WINDOW", "EVENT_SOURCE_SUBTREE", "EVENT_SOURCE_WINDOW_ROOT", "NONE"). */
+    val rootAcquisitionMethod: String = "NONE",
 
     /** True if a horizontal stories tray was detected near the top of the interface. */
     val hasHorizontalStoryList: Boolean = false,
+
 
     /** True if a top action/app bar was detected. */
     val hasTopAppBar: Boolean = false,
@@ -65,6 +84,57 @@ data class StructuralSnapshot(
     /** True if a profile header structure (avatar + stats container) was detected. */
     val hasProfileHeader: Boolean = false,
 
+    /** True if a main scrollable feed container (continuous vertical list, not a page-by-page pager) was detected. */
+    val hasScrollableFeed: Boolean = false,
+
+    /** True if bottom navigation structure was specifically observable. */
+    val bottomNavObserved: Boolean = false,
+
+    /** Number of tab items detected in the bottom navigation bar. */
+    val bottomNavChildCount: Int? = null,
+
+    /** True if traversal reached the configured node limit (e.g. 250 nodes). */
+    val reachedNodeLimit: Boolean = false,
+
+    /** True if traversal reached the configured depth limit (e.g. 14 levels). */
+    val reachedDepthLimit: Boolean = false,
+
+    /** True if coordinate bounds were available and usable from the accessibility nodes. */
+    val hasBounds: Boolean = true,
+
+    /** Counts of canonical widget class names observed in the hierarchy. */
+    val observedClassCounts: Map<String, Int> = emptyMap(),
+
+    /** The incoming accessibility event type name (e.g. TYPE_WINDOW_STATE_CHANGED). */
+    val eventType: String? = null,
+
     /** Privacy-safe structural classification hints. */
-    val detectedStructuralHints: Set<String> = emptySet()
+    val detectedStructuralHints: Set<String> = emptySet(),
+
+    /** True if DM Inbox thread list (inbox_refreshable_thread_list_recyclerview) was detected on-screen. */
+    val hasDmInboxList: Boolean = false,
+
+    /** True if DM chat composer bar (message_composer_bar, row_thread_composer_edittext) was detected on-screen. */
+    val hasDmComposer: Boolean = false,
+
+    /** True if DM message list (message_list, thread_fragment_container) was detected on-screen. */
+    val hasDmMessageList: Boolean = false,
+
+    /** True if dedicated Clips viewer container (clips_viewer_view_pager) was detected on-screen. */
+    val hasClipsViewer: Boolean = false,
+
+    /** True if active Clips video/media components (clips_media_component, clips_single_media_component, etc.) were detected on-screen. */
+    val hasClipsComponents: Boolean = false,
+
+    /** True if explicit profile header stats (profile_header_post_count_front_familiar, followers, following) were detected on-screen. */
+    val hasProfileHeaderStats: Boolean = false,
+
+    /** True if profile-specific tabs/viewpager (profile_tab_layout, profile_viewpager, clips_grid_recyclerview) were detected on-screen. */
+    val hasProfileTabs: Boolean = false,
+
+    /** True if Story viewer root or components (reel_viewer_root, reel_viewer_header_container, story_progress) were detected on-screen. */
+    val hasStoryViewer: Boolean = false,
+
+    /** Optional detailed privacy-safe structural tree dump for diagnostic analysis. */
+    val structuralTreeDump: List<StructuralNodeRecord> = emptyList()
 )
