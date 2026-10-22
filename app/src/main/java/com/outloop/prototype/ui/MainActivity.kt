@@ -28,13 +28,22 @@ import com.outloop.prototype.ui.theme.OutLoopTheme
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_START_SCROLL_RESCUE_RESET = "com.outloop.extra.START_SCROLL_RESCUE_RESET"
+    }
+
     private var isServiceEnabledInSettings by mutableStateOf(false)
+    private var showScrollRescueReset by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         UserPreferencesRepository.init(this)
         checkAccessibilityServiceEnabled()
         com.outloop.prototype.reminder.ReelsReminderManager.ensureNotificationChannel(this)
+
+        if (intent?.getBooleanExtra(EXTRA_START_SCROLL_RESCUE_RESET, false) == true) {
+            showScrollRescueReset = true
+        }
 
         setContent {
             OutLoopTheme {
@@ -46,6 +55,12 @@ class MainActivity : ComponentActivity() {
                 val isSessionActive by DiagnosticSessionRepository.isSessionActive.collectAsState()
                 val diagnosticResults by DiagnosticSessionRepository.diagnosticResults.collectAsState()
                 val totalRecordedCount by DiagnosticSessionRepository.totalRecordedCount.collectAsState()
+
+                if (showScrollRescueReset) {
+                    ScrollRescueResetDialog(
+                        onDismiss = { showScrollRescueReset = false }
+                    )
+                }
 
                 if (!isOnboardingCompleted) {
                     when (onboardingStep) {
@@ -95,7 +110,8 @@ class MainActivity : ComponentActivity() {
                                 onStartSession = { DiagnosticSessionRepository.startSession() },
                                 onStopSession = { DiagnosticSessionRepository.stopSession() },
                                 onViewLiveResults = { currentAppScreen = AppScreen.LiveResults },
-                                onOpenSetup = { currentAppScreen = AppScreen.AccessibilitySetup }
+                                onOpenSetup = { currentAppScreen = AppScreen.AccessibilitySetup },
+                                onStartScrollRescueReset = { showScrollRescueReset = true }
                             )
                         }
                         is AppScreen.LiveResults -> {
@@ -126,6 +142,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_START_SCROLL_RESCUE_RESET, false)) {
+            showScrollRescueReset = true
         }
     }
 

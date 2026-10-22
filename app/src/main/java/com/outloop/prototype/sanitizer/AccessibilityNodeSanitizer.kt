@@ -111,6 +111,7 @@ object AccessibilityNodeSanitizer {
         var hasProfileHeaderStats = false
         var hasProfileTabs = false
         var hasStoryViewer = false
+        var hasCommentsPanel = false
 
         // Breadth-First / Depth-Bounded traversal
         val nodeBounds = Rect()
@@ -350,6 +351,23 @@ object AccessibilityNodeSanitizer {
                                 hasStoryProgress = true
                                 hasMediaPlayback = true
                                 hints.add("STORY_VIEWER_COMPONENT")
+                            }
+
+                            // Comments Panel / Bottom Sheet
+                            idEntry in listOf(
+                                "layout_comment_thread",
+                                "comment_composer_view",
+                                "comment_composer",
+                                "comments_recycler_view",
+                                "comment_thread_view",
+                                "comment_input_row",
+                                "comments_list"
+                            ) || idEntry.startsWith("row_comment_") ||
+                            idEntry.contains("comments_recycler") ||
+                            idEntry.contains("comment_thread") ||
+                            idEntry.contains("comment_composer") -> {
+                                hasCommentsPanel = true
+                                hints.add("COMMENTS_PANEL")
                             }
 
                             // Feed Post Controls
@@ -685,6 +703,7 @@ object AccessibilityNodeSanitizer {
             hasProfileHeaderStats = hasProfileHeaderStats,
             hasProfileTabs = hasProfileTabs,
             hasStoryViewer = hasStoryViewer,
+            hasCommentsPanel = hasCommentsPanel,
             structuralTreeDump = treeDump
         )
     }

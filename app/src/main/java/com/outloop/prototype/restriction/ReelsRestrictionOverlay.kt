@@ -6,6 +6,10 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -32,7 +36,8 @@ import com.outloop.prototype.ui.MainActivity
  * 5. Zero Obstruction: Does not prevent users from disabling or revoking accessibility in system settings.
  */
 class ReelsRestrictionOverlay(
-    private val service: AccessibilityService
+    private val service: AccessibilityService,
+    private val playbackController: com.outloop.prototype.playback.ReelsPlaybackController = com.outloop.prototype.playback.ReelsPlaybackController(service)
 ) {
 
     companion object {
@@ -86,6 +91,16 @@ class ReelsRestrictionOverlay(
             windowManager.addView(view, params)
             overlayRootView = view
             isAttached = true
+            playbackController.suppressPlayback(
+                rootNode = null,
+                isVerifiedTargetPackage = true,
+                isReelsContext = true,
+                cause = com.outloop.prototype.playback.PlaybackRestrictionCause.DAILY_ALLOWANCE
+            )
+            try {
+                com.outloop.prototype.history.AttentionHistoryRepository.getInstance(service)
+                    .recordRestrictionDisplayed(getTodayDate())
+            } catch (_: Exception) {}
             Log.d(TAG, "Restriction overlay attached successfully for exhausted allowance ($allowanceMinutes mins).")
         } catch (e: Exception) {
             // Fail-open: catch any window manager exceptions and ensure no stale state
@@ -116,6 +131,7 @@ class ReelsRestrictionOverlay(
         } catch (e: Exception) {
             Log.e(TAG, "Exception dismissing restriction overlay: ${e.message}", e)
         } finally {
+            playbackController.releaseSuppression(com.outloop.prototype.playback.PlaybackRestrictionCause.DAILY_ALLOWANCE)
             isAttached = false
             overlayRootView = null
         }
@@ -213,7 +229,7 @@ class ReelsRestrictionOverlay(
         // 5. Body explanation
         val usedMinutes = maxOf(allowanceMinutes, accumulatedMs / 60000L)
         val bodyView = TextView(context).apply {
-            text = "You've reached your daily limit of $usedMinutes minutes on Instagram Reels. Your allowance resets at midnight."
+            text = "You've reached your daily limit of $usedMinutes minutes on Instagram Reels. You can request extra time or relax today's restriction in OutLoop. Your allowance resets at midnight."
             setTextColor(COLOR_TEXT_SECONDARY)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             setLineSpacing(dp(2).toFloat(), 1f)
@@ -257,48 +273,154 @@ class ReelsRestrictionOverlay(
         featuresContainer.addView(createFeatureLine("✓ Profiles and Home Feed are accessible"))
         card.addView(featuresContainer, featuresParams)
 
-        // 7. Action Button 1: Back to Feed / Previous Screen
-        val btnBackDrawable = GradientDrawable().apply {
-            setColor(COLOR_ACCENT_LIME)
-            cornerRadius = dp(14).toFloat()
-        }
-        val btnBack = TextView(context).apply {
-            text = "Back to Previous Screen"
-            setTextColor(COLOR_ON_ACCENT_LIME)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        // 7. Scroll Rescue Section Header
+        val rescueHeader = TextView(context).apply {
+            text = "SCROLL RESCUE"
+            setTextColor(COLOR_ACCENT_LIME)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            background = btnBackDrawable
-            setPadding(dp(16), dp(14), dp(16), dp(14))
-            isClickable = true
-            setOnClickListener {
-                dismiss()
-                // Safely perform global back action so Instagram navigates away from Reels
-                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            }
+            letterSpacing = 0.08f
         }
-        val btnBackParams = LinearLayout.LayoutParams(
+        val rescueHeaderParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply {
-            bottomMargin = dp(10)
+            bottomMargin = dp(8)
         }
-        card.addView(btnBack, btnBackParams)
+        card.addView(rescueHeader, rescueHeaderParams)
 
-        // 8. Action Button 2: Open OutLoop Dashboard
-        val btnDashboardDrawable = GradientDrawable().apply {
-            setColor(Color.TRANSPARENT)
-            cornerRadius = dp(14).toFloat()
-            setStroke(dp(1), COLOR_CARD_BORDER)
+        // Helper to build cohesive option cards
+        fun createRescueButton(
+            title: String,
+            subtitle: String,
+            isPrimary: Boolean,
+            onClick: () -> Unit
+        ): LinearLayout {
+            val bgDrawable = GradientDrawable().apply {
+                if (isPrimary) {
+                    setColor(COLOR_ACCENT_LIME)
+                } else {
+                    setColor(0x1AFFFFFF)
+                    setStroke(dp(1), COLOR_CARD_BORDER)
+                }
+                cornerRadius = dp(12).toFloat()
+            }
+
+            return LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                background = bgDrawable
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { onClick() }
+
+                val titleText = TextView(context).apply {
+                    text = title
+                    setTextColor(if (isPrimary) COLOR_ON_ACCENT_LIME else COLOR_TEXT_PRIMARY)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                }
+                val subText = TextView(context).apply {
+                    text = subtitle
+                    setTextColor(if (isPrimary) 0xCC1A2600.toInt() else COLOR_TEXT_SECONDARY)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                    setPadding(0, dp(2), 0, 0)
+                }
+                addView(titleText)
+                addView(subText)
+            }
         }
+
+        // Choice A: "I'm done"
+        val btnDone = createRescueButton(
+            title = "A. I'm done",
+            subtitle = "Exit Instagram and return to your home screen",
+            isPrimary = true
+        ) {
+            recordDismissal()
+            dismiss()
+            val homeHandled = service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+            if (!homeHandled) {
+                try {
+                    val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_HOME)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    service.startActivity(homeIntent)
+                } catch (_: Exception) {
+                    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                }
+            }
+        }
+        val btnDoneParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dp(8)
+        }
+        card.addView(btnDone, btnDoneParams)
+
+        // Choice B: "Back to Instagram"
+        val btnInstagram = createRescueButton(
+            title = "B. Back to Instagram",
+            subtitle = "Return to Home Feed, DMs & Stories",
+            isPrimary = false
+        ) {
+            recordDismissal()
+            dismiss()
+            // In Instagram, pressing Back from the Reels tab pops back to the Home Feed tab
+            val backHandled = service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+            if (!backHandled) {
+                val igIntent = service.packageManager.getLaunchIntentForPackage("com.instagram.android")?.apply {
+                    action = Intent.ACTION_MAIN
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                if (igIntent != null) {
+                    try {
+                        service.startActivity(igIntent)
+                    } catch (_: Exception) {
+                        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                    }
+                }
+            }
+        }
+        val btnInstagramParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dp(8)
+        }
+        card.addView(btnInstagram, btnInstagramParams)
+
+        // Choice C: "Take a reset"
+        val btnReset = createRescueButton(
+            title = "C. Take a 60-second reset",
+            subtitle = "Optional mindful pause to breathe & look away",
+            isPrimary = false
+        ) {
+            dismiss()
+            val resetIntent = Intent(service, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(MainActivity.EXTRA_START_SCROLL_RESCUE_RESET, true)
+            }
+            service.startActivity(resetIntent)
+        }
+        val btnResetParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dp(12)
+        }
+        card.addView(btnReset, btnResetParams)
+
+        // Secondary Link: Open OutLoop Dashboard for extra time / relax today
         val btnDashboard = TextView(context).apply {
-            text = "Open OutLoop Dashboard"
-            setTextColor(COLOR_TEXT_PRIMARY)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            text = "Need extra time or want to relax restrictions? Open Dashboard"
+            setTextColor(COLOR_TEXT_MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             gravity = Gravity.CENTER
-            background = btnDashboardDrawable
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setPadding(dp(8), dp(6), dp(8), dp(6))
             isClickable = true
             setOnClickListener {
                 dismiss()
@@ -317,5 +439,20 @@ class ReelsRestrictionOverlay(
         // 9. Add card to root
         root.addView(card, cardParams)
         return root
+    }
+
+    private fun recordDismissal() {
+        try {
+            com.outloop.prototype.history.AttentionHistoryRepository.getInstance(service)
+                .recordRestrictionDismissed(getTodayDate())
+        } catch (_: Exception) {}
+    }
+
+    private fun getTodayDate(): String {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            java.time.LocalDate.now().toString()
+        } else {
+            java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        }
     }
 }

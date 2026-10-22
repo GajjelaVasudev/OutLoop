@@ -105,13 +105,18 @@ class ScreenClassifier(
         // Priority 3: Dedicated Reels Tab signature
         // Requirements: Bottom navigation bar present with Clips tab selected, clips viewer / components / vertical pager active.
         if (matchesDedicatedReelsTab(snapshot)) {
-            val conf = if ((snapshot.hasClipsViewer || snapshot.hasClipsComponents) && snapshot.selectedTabId == "clips_tab") Confidence.HIGH else Confidence.MEDIUM
+            val isClipsTab = snapshot.selectedTabId == "clips_tab" || (snapshot.hasCommentsPanel && (snapshot.hasClipsViewer || snapshot.hasClipsComponents))
+            val conf = if ((snapshot.hasClipsViewer || snapshot.hasClipsComponents) && isClipsTab) Confidence.HIGH else Confidence.MEDIUM
             return ClassificationResult(
                 candidateState = CandidateScreenState.REELS_TAB,
                 confidence = conf,
                 reasonCode = ReasonCode.MULTIPLE_SIGNALS_MATCH,
                 timestamp = now,
-                evidenceExplanation = "Bottom navigation bar detected with Reels tab and full-screen clips container.",
+                evidenceExplanation = if (snapshot.hasCommentsPanel) {
+                    "Dedicated Reels container active with comments overlay panel."
+                } else {
+                    "Bottom navigation bar detected with Reels tab and full-screen clips container."
+                },
                 isDeviceVerified = false,
                 diagnosticSummary = summary.copy(observationOutcome = ObservationOutcome.CLASSIFIED)
             )
@@ -287,8 +292,8 @@ class ScreenClassifier(
     }
 
     private fun hasConflictingSignals(snapshot: StructuralSnapshot): Boolean {
-        // Bottom nav should not coexist with an active DM chat composer (unless in full-screen media with bottom nav)
-        if (snapshot.hasBottomNavigationBar && snapshot.hasChatInputBar && !snapshot.hasMediaPlaybackContainer && !snapshot.hasDmComposer) {
+        // Bottom nav should not coexist with an active DM chat composer (unless in full-screen media with bottom nav or comments panel)
+        if (snapshot.hasBottomNavigationBar && snapshot.hasChatInputBar && !snapshot.hasMediaPlaybackContainer && !snapshot.hasDmComposer && !snapshot.hasCommentsPanel) {
             return true
         }
         // Story progress indicators should not coexist with a chat input composer (unless story viewer)
@@ -336,7 +341,13 @@ class ScreenClassifier(
 
         // Dedicated Reels requires bottom navigation + selected clips tab + clips evidence
         if (isClipsTab && hasClipsEvidence) {
-            return !snapshot.hasChatInputBar || snapshot.hasClipsViewer || snapshot.hasClipsComponents
+            return !snapshot.hasChatInputBar || snapshot.hasClipsViewer || snapshot.hasClipsComponents || snapshot.hasCommentsPanel
+        }
+
+        // Active Reel with comments bottom sheet open:
+        // Reel remains active underneath, so session is preserved and associated with the Reel
+        if (snapshot.hasCommentsPanel && hasClipsEvidence && !snapshot.hasFeedPostControls && !snapshot.hasHorizontalStoryList) {
+            return true
         }
 
         // Fallback: bottom nav + vertical pager + no feed controls / stories / profile / message list
@@ -349,6 +360,8 @@ class ScreenClassifier(
     }
 
     private fun matchesDmConversation(snapshot: StructuralSnapshot): Boolean {
+        // Comments sheet has a comment composer and comment list; must not be classified as DM
+        if (snapshot.hasCommentsPanel) return false
         // If specific DM conversation indicators are present:
         if (snapshot.hasDmComposer && (snapshot.hasDmMessageList || snapshot.hasMessageList)) {
             return true
@@ -425,7 +438,7 @@ class ScreenClassifier(
     private fun matchesHomeFeed(snapshot: StructuralSnapshot): Boolean {
         if (snapshot.hasStoryViewer || snapshot.hasDmComposer || snapshot.hasDmInboxList) return false
         if (snapshot.hasProfileHeader) return false
-        if (snapshot.hasChatInputBar) return false
+        if (snapshot.hasChatInputBar && !snapshot.hasCommentsPanel) return false
         if (snapshot.hasStoryProgressIndicators) return false
         if (snapshot.hasVerticalPager) return false
         if (snapshot.selectedTabId in listOf("clips_tab", "profile_tab", "direct_tab")) return false

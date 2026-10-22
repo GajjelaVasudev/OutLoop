@@ -1514,4 +1514,54 @@ class ScreenClassifierTest {
         assertEquals(ReasonCode.AMBIGUOUS_STRUCTURE, result.reasonCode)
         assertEquals(ObservationOutcome.CLASSIFIED, result.diagnosticSummary?.observationOutcome)
     }
+
+    @Test
+    fun testReelWithCommentsPanel_ClassifiedAsReelsTabNotDmConversation() {
+        val snapshotWithComments = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 75,
+            maxDepth = 9,
+            hasClipsViewer = true,
+            hasClipsComponents = true,
+            hasVerticalPager = true,
+            hasMediaPlaybackContainer = true,
+            hasCommentsPanel = true,
+            hasChatInputBar = true,
+            hasMessageList = true,
+            hasBottomNavigationBar = false,
+            selectedTabId = null
+        )
+
+        val result = classifier.classify(snapshotWithComments)
+
+        assertEquals(CandidateScreenState.REELS_TAB, result.candidateState)
+        assertEquals(Confidence.HIGH, result.confidence)
+        assertEquals(ReasonCode.MULTIPLE_SIGNALS_MATCH, result.reasonCode)
+        assertFalse(result.candidateState == CandidateScreenState.DM_CONVERSATION)
+    }
+
+    @Test
+    fun testCommentsPanelOnHomeFeed_DoesNotClassifyAsReelsTab() {
+        val feedCommentsSnapshot = StructuralSnapshot(
+            packageName = "com.instagram.android",
+            isForeground = true,
+            hasRootNode = true,
+            totalNodeCount = 80,
+            maxDepth = 9,
+            hasCommentsPanel = true,
+            hasChatInputBar = true,
+            hasFeedPostControls = true,
+            hasHorizontalStoryList = true,
+            hasBottomNavigationBar = true,
+            selectedTabId = "feed_tab"
+        )
+
+        val result = classifier.classify(feedCommentsSnapshot)
+
+        assertEquals(CandidateScreenState.HOME_FEED, result.candidateState)
+        assertFalse(result.candidateState == CandidateScreenState.REELS_TAB)
+        assertFalse(result.candidateState == CandidateScreenState.DM_CONVERSATION)
+    }
 }

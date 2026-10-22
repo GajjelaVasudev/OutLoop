@@ -31,6 +31,9 @@ class UserPreferencesRepositoryTest {
             .thenReturn(mockPrefs)
         `when`(mockPrefs.edit()).thenReturn(mockEditor)
         `when`(mockEditor.putBoolean(any(), any())).thenReturn(mockEditor)
+        `when`(mockEditor.putInt(any(), any())).thenReturn(mockEditor)
+        `when`(mockPrefs.getBoolean(eq("key_continuous_break_enabled"), eq(true))).thenReturn(true)
+        `when`(mockPrefs.getInt(eq("key_continuous_break_interval_mins"), eq(5))).thenReturn(5)
     }
 
     @Test
@@ -68,5 +71,31 @@ class UserPreferencesRepositoryTest {
         UserPreferencesRepository.resetOnboarding(mockContext)
         assertFalse(UserPreferencesRepository.isOnboardingCompleted.value)
         verify(mockEditor).putBoolean("key_onboarding_completed", false)
+    }
+
+    @Test
+    fun testContinuousBreakDefaultSettings() {
+        UserPreferencesRepository.init(mockContext)
+
+        assertTrue("Continuous break default enabled must be true", UserPreferencesRepository.isContinuousBreakEnabled.value)
+        org.junit.Assert.assertEquals("Continuous break default interval must be 5m", 5, UserPreferencesRepository.continuousBreakIntervalMinutes.value)
+    }
+
+    @Test
+    fun testSetContinuousBreakEnabledPersists() {
+        UserPreferencesRepository.setContinuousBreakEnabled(mockContext, false)
+
+        assertFalse(UserPreferencesRepository.isContinuousBreakEnabled.value)
+        verify(mockEditor).putBoolean("key_continuous_break_enabled", false)
+        verify(mockEditor).apply()
+    }
+
+    @Test
+    fun testSetContinuousBreakIntervalMinutesPersists() {
+        UserPreferencesRepository.setContinuousBreakIntervalMinutes(mockContext, 10)
+
+        org.junit.Assert.assertEquals(10, UserPreferencesRepository.continuousBreakIntervalMinutes.value)
+        verify(mockEditor).putInt("key_continuous_break_interval_mins", 10)
+        verify(mockEditor).apply()
     }
 }

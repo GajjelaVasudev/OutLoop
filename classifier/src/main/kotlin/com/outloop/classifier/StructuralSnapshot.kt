@@ -135,6 +135,9 @@ data class StructuralSnapshot(
     /** True if Story viewer root or components (reel_viewer_root, reel_viewer_header_container, story_progress) were detected on-screen. */
     val hasStoryViewer: Boolean = false,
 
+    /** True if a comments sheet/panel (e.g. layout_comment_thread, comment_composer, comments_recycler_view) was detected on-screen. */
+    val hasCommentsPanel: Boolean = false,
+
     /** Optional detailed privacy-safe structural tree dump for diagnostic analysis. */
     val structuralTreeDump: List<StructuralNodeRecord> = emptyList()
 )
